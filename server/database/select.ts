@@ -1,8 +1,5 @@
-import { resolve } from 'node:path';
-import sqlite3 from 'sqlite3';
+import { all, get, normalizeCallsign, ready } from './index';
 import type { Address, CommunicationLog, QSLReceive, QSLSend } from './type';
-
-const databasePath = resolve(process.cwd(), 'data/logbook.db');
 
 export interface PaginatedResult<T> {
 	items: T[];
@@ -62,37 +59,6 @@ const communicationLogSelect = `
 	LEFT JOIN qsl_receives AS qsl_receive ON qsl_receive.id = log.qsl_receive_id
 `;
 
-const database = new sqlite3.Database(databasePath);
-
-const ready = run(`
-	CREATE INDEX IF NOT EXISTS idx_communication_logs_callsign_time_frequency
-	ON communication_logs(callsign, time, frequency)
-`);
-
-function run(sql: string, parameters: unknown[] = []): Promise<void> {
-	return new Promise((resolvePromise, reject) => {
-		database.run(sql, parameters, (error) => (error ? reject(error) : resolvePromise()));
-	});
-}
-
-function all<T>(sql: string, parameters: unknown[] = []): Promise<T[]> {
-	return new Promise((resolvePromise, reject) => {
-		database.all(sql, parameters, (error, rows) => {
-			if (error) reject(error);
-			else resolvePromise(rows as T[]);
-		});
-	});
-}
-
-function get<T>(sql: string, parameters: unknown[] = []): Promise<T | undefined> {
-	return new Promise((resolvePromise, reject) => {
-		database.get(sql, parameters, (error, row) => {
-			if (error) reject(error);
-			else resolvePromise(row as T | undefined);
-		});
-	});
-}
-
 function getPagination(page: number, pageSize: number) {
 	const normalizedPage = Math.max(1, Math.floor(page));
 	const normalizedPageSize = Math.max(1, Math.floor(pageSize));
@@ -102,10 +68,6 @@ function getPagination(page: number, pageSize: number) {
 		pageSize: normalizedPageSize,
 		offset: (normalizedPage - 1) * normalizedPageSize,
 	};
-}
-
-function normalizeCallsign(callsign: string): string {
-	return callsign.toUpperCase();
 }
 
 function toCommunicationLog(row: CommunicationLogRow): CommunicationLog {

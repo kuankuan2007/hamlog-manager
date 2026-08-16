@@ -1,5 +1,6 @@
-import Router from "@kuankuan/k-server";
-import SelectRouter from "./select";
+import { Router } from "@kuankuan/k-server";
+import { SelectRouter } from "./select";
+import { UpdateRouter } from "./update";
 
 const ApiRouter = new Router({
   matcher: "api",
@@ -7,4 +8,5 @@ const ApiRouter = new Router({
 });
 
 ApiRouter.addRouter(SelectRouter);
+ApiRouter.addRouter(UpdateRouter);
 export default ApiRouter;

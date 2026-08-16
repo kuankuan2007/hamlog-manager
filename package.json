@@ -21,6 +21,7 @@
   "dependencies": {
     "@kuankuan/assist-2026": "^0.1.17",
     "@kuankuan/k-server": "^1.2.1",
+    "ajv": "^8.20.0",
     "color": "^5.0.3",
     "rolldown": "^1.2.4",
     "sqlite3": "^6.0.1",

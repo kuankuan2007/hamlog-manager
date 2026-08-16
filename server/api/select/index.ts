@@ -8,7 +8,7 @@ import {
 import { SelectQSLReceivesByCallsignRouter, SelectQSLReceivesRouter } from './qslReceive';
 import { SelectQSLSendsByCallsignRouter, SelectQSLSendsRouter } from './qslSend';
 
-const SelectRouter = new Router({
+export const SelectRouter = new Router({
   matcher: 'select',
   name: 'select',
 });
@@ -23,4 +23,3 @@ SelectRouter.addRouter(SelectQSLReceivesByCallsignRouter);
 SelectRouter.addRouter(SelectQSLSendsRouter);
 SelectRouter.addRouter(SelectQSLSendsByCallsignRouter);
 
-export default SelectRouter;

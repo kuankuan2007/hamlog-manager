@@ -1,0 +1,13 @@
+@use '@kuankuan/assist-2026/styles/theme.scss' as _theme;
+@mixin use() {
+  @include _theme.use {
+    @content;
+  }
+}
+@function get($paramName) {
+  @return _theme.get($paramName);
+}
+
+@function mix($value1, $value2, $ratio: 50%, $alpha: 1) {
+  @return _theme.mix($value1, $value2, $ratio, $alpha);
+}

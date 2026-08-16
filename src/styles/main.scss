@@ -1,0 +1,14 @@
+@use '@/assets/fontello/font-defines.scss' as *;
+body {
+  margin: 0;
+  padding: 0;
+  @include theme.use {
+    background: theme.get('background');
+    color: theme.get('color');
+  }
+}
+a {
+  @include theme.use {
+    color: theme.get('active-color');
+  }
+}

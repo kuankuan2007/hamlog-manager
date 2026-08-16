@@ -1,0 +1,59 @@
+{
+  "name": "scale",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build",
+    "lint": "eslint . --fix",
+    "format": "prettier --write src/",
+    "load-fontello": "load-fontello",
+    "server-build": "rolldown --config rolldown.config.server.ts",
+    "server-start": "rolldown --config rolldown.config.server.ts && node server-dist/index.js"
+  },
+  "dependencies": {
+    "@kuankuan/assist-2026": "^0.1.17",
+    "@kuankuan/k-server": "^1.2.1",
+    "color": "^5.0.3",
+    "rolldown": "^1.2.4",
+    "sqlite3": "^6.0.1",
+    "vue": "^3.5.40",
+    "vue-router": "^5.2.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "^24.0.4",
+    "@types/node": "^25.9.5",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "@vue/tsconfig": "^0.9.1",
+    "autoprefixer": "^10.5.4",
+    "compressing": "^2.1.1",
+    "cssnano": "^8.0.2",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.8.0",
+    "eslint-plugin-vue": "~10.9.2",
+    "jiti": "^2.7.0",
+    "npm-run-all2": "^9.0.2",
+    "postcss-preset-env": "^11.3.2",
+    "prettier": "3.8.3",
+    "rollup-plugin-visualizer": "^7.0.1",
+    "sass": "^1.102.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.65.0",
+    "unplugin-auto-import": "^21.0.0",
+    "vite": "^8.1.5",
+    "vite-plugin-inspect": "11.3.3",
+    "vite-plugin-vue-devtools": "^8.2.1",
+    "vue-tsc": "^3.3.8",
+    "xlsx": "^0.18.5"
+  },
+  "packageManager": "pnpm@11.17.0"
+}

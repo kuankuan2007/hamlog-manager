@@ -1,0 +1,84 @@
+import { fileURLToPath, URL } from 'node:url';
+
+import { defineConfig } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import vueDevTools from 'vite-plugin-vue-devtools';
+import autoImport from 'unplugin-auto-import/vite';
+import Inspect from 'vite-plugin-inspect';
+import { visualizer } from 'rollup-plugin-visualizer';
+import postcssPresetEnv from 'postcss-preset-env';
+import autoprefixer from 'autoprefixer';
+import cssnano from 'cssnano';
+import VitePluginBuildInfo from './vite-plugin/build-info';
+import VitePluginHamLog from './vite-plugin/hamlog';
+
+const sassAddition = `
+@use '@/styles/theme.scss';
+@use '@kuankuan/assist-2026/styles/motion.scss';
+@use 'sass:math';
+@use 'sass:color';
+`;
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [
+    vue(),
+    vueDevTools(),
+    Inspect(),
+    autoImport({
+      imports: ['vue', 'vue-router'],
+      dts: 'src/types/auto-imports.d.ts',
+    }),
+    visualizer({
+      gzipSize: true,
+      brotliSize: true,
+      emitFile: false,
+      filename: './temp/test.html',
+      open: true,
+    }),
+    VitePluginBuildInfo(),
+    VitePluginHamLog('C:\\Users\\kuankuan\\OneDrive\\文档\\通联日志.xlsx'),
+  ],
+  css: {
+    postcss: {
+      plugins: [
+        postcssPresetEnv(),
+        autoprefixer({
+          overrideBrowserslist: ['Android 4.1', 'iOS 7.1', 'Chrome > 31', 'ff > 31', 'ie >= 8'],
+          grid: true,
+        }),
+        cssnano(),
+      ],
+    },
+    preprocessorOptions: {
+      scss: {
+        additionalData: sassAddition,
+      },
+      sass: {
+        additionalData: sassAddition,
+      },
+    },
+  },
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+  server: {
+    host: '0.0.0.0',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        chunkFileNames: function (chunk) {
+          for (const modules of chunk.moduleIds) {
+            if (modules.includes('src/scales')) {
+              return 'scales/[name]-[hash].js';
+            }
+          }
+          return 'script/[name]-[hash].js';
+        },
+      },
+    },
+  },
+});

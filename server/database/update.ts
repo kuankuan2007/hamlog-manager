@@ -1,10 +1,14 @@
 import type { CreateCommunicationLogInput } from '../../schema/communicationLog';
+import type { CreateAddressInput } from '../../schema/address';
+import type { Address } from '../../schema/address';
+import type { CommunicationLog, QSLReceive, QSLSend } from '../../schema/communicationLog';
 import {
+	formatCreateAddressInputErrors,
 	formatCreateCommunicationLogInputErrors,
+	validateCreateAddressInput,
 	validateCreateCommunicationLogInput,
 } from '../schema';
 import { get, normalizeCallsign, ready, run, runAndGetId } from './index';
-import type { Address, CommunicationLog, QSLReceive, QSLSend } from './type';
 
 interface AddressRow extends Address {
 	id: number;
@@ -16,6 +20,39 @@ interface QSLSendRow extends QSLSend {
 
 interface QSLReceiveRow extends QSLReceive {
 	id: number;
+}
+
+export async function upsertAddress(input: CreateAddressInput): Promise<Address> {
+	const normalizedInput: CreateAddressInput = {
+		...input,
+		callsign: normalizeCallsign(input.callsign),
+	};
+
+	if (!validateCreateAddressInput(normalizedInput)) {
+		throw new Error(
+			`Invalid address input: ${formatCreateAddressInputErrors(validateCreateAddressInput.errors)}`
+		);
+	}
+
+	await ready;
+	await run(
+		`INSERT INTO addresses (callsign, postal_code, address, recipient_name, updated_at)
+		 VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT(callsign) DO UPDATE SET
+			postal_code = excluded.postal_code,
+			address = excluded.address,
+			recipient_name = excluded.recipient_name,
+			updated_at = excluded.updated_at`,
+		[
+			normalizedInput.callsign,
+			normalizedInput.postalCode,
+			normalizedInput.address,
+			normalizedInput.recipientName ?? null,
+			normalizedInput.updatedAt,
+		]
+	);
+
+	return normalizedInput;
 }
 
 function findAddressByCallsign(callsign: string): Promise<AddressRow | undefined> {

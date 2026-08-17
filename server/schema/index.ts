@@ -1,5 +1,7 @@
 import Ajv from 'ajv';
 import type { ErrorObject } from 'ajv';
+import { CreateAddressInputSchema, CreateAddressRequestSchema } from '../../schema/address';
+import type { CreateAddressInput, CreateAddressRequest } from '../../schema/address';
 import {
 	CreateCommunicationLogInputSchema,
 	DateTimeFormatName,
@@ -12,6 +14,14 @@ ajv.addFormat(DateTimeFormatName, { type: 'string', validate: isValidDateTime })
 
 export const validateCreateCommunicationLogInput = ajv.compile<CreateCommunicationLogInput>(
 	CreateCommunicationLogInputSchema
+);
+
+export const validateCreateAddressInput = ajv.compile<CreateAddressInput>(
+	CreateAddressInputSchema
+);
+
+export const validateCreateAddressRequest = ajv.compile<CreateAddressRequest>(
+	CreateAddressRequestSchema
 );
 
 export function formatCreateCommunicationLogInputErrors(
@@ -34,4 +44,10 @@ export function formatCreateCommunicationLogInputErrors(
 	if (hasTimeError) messages.unshift('invalid time format');
 
 	return messages.join(', ');
+}
+
+export function formatCreateAddressInputErrors(
+	errors: ErrorObject[] | null | undefined
+): string {
+	return ajv.errorsText(errors);
 }

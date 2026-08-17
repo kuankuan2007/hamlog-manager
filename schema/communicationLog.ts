@@ -1,3 +1,36 @@
+import type { Address } from './address';
+
+export interface CommunicationLog {
+	sequenceNumber: number;
+	time: string;
+	callsign: string;
+	frequency: number;
+	mode: string;
+	rxReport: number;
+	txReport: number;
+	summary?: string;
+	qslReceived: QSLReceive | null;
+	qslSent: QSLSend | null;
+	address?: Address;
+}
+
+export interface QSLSend {
+	callsign: string;
+	sentAt: string;
+}
+
+export interface QSLReceive {
+	callsign: string;
+	receivedAt: string;
+}
+
+export interface LogBook {
+	communicationLogs: CommunicationLog[];
+	addresses: Address[];
+	qslSends: QSLSend[];
+	qslReceives: QSLReceive[];
+}
+
 export interface CreateCommunicationLogInput {
 	time: string;
 	callsign: string;

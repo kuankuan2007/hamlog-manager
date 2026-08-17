@@ -60,8 +60,9 @@
   </div>
 </template>
 <script setup lang="ts">
-import type { CommunicationLog } from '@/types/hamlog';
+import type { CommunicationLog } from '@schema/communicationLog';
 import { copyText } from '@kuankuan/assist-2026/utils/copyText';
+import { selectCommunicationLogs } from '@/api/select';
 const communicationLogList = ref<CommunicationLog[]>([]);
 const showCallsign = ref(true);
 function formatContactContentCN(log: CommunicationLog): string {
@@ -71,10 +72,9 @@ function formatContactContentEN(log: CommunicationLog): string {
   return `Time: ${log.time} UTC\nCallsign: ${log.callsign}\nFrequency: ${log.frequency.toFixed(3)} MHz\nMode: ${log.mode}\nSignal Report: RX ${log.rxReport}\tTX: ${log.txReport}`;
 }
 
-fetch('/api/communicationLogs')
-  .then((response) => response.json())
-  .then((data) => {
-    communicationLogList.value.push(...data);
+selectCommunicationLogs()
+  .then((logs) => {
+    communicationLogList.value = logs.items;
   })
   .catch((error) => {
     console.error('Error fetching communication logs:', error);
@@ -118,7 +118,7 @@ fetch('/api/communicationLogs')
     }
   }
 }
-.button-list{
+.button-list {
   padding: 0.5em;
 }
 </style>

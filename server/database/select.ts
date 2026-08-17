@@ -1,13 +1,7 @@
 import { all, get, normalizeCallsign, ready } from './index';
-import type { Address, CommunicationLog, QSLReceive, QSLSend } from './type';
-
-export interface PaginatedResult<T> {
-	items: T[];
-	page: number;
-	pageSize: number;
-	total: number;
-}
-
+import type { Address } from '../../schema/address';
+import type { CommunicationLog, QSLReceive, QSLSend } from '../../schema/communicationLog';
+import type { PaginatedResult } from '@schema/utils';
 export interface CommunicationLogBasic {
 	date: string;
 	callsign: string;
@@ -110,7 +104,7 @@ export async function selectCommunicationLogs(
 	const pagination = getPagination(page, pageSize);
 	const [rows, count] = await Promise.all([
 		all<CommunicationLogRow>(
-			`${communicationLogSelect} ORDER BY log.time DESC, log.id DESC LIMIT ? OFFSET ?`,
+			`${communicationLogSelect} ORDER BY log.time ASC, log.id DESC LIMIT ? OFFSET ?`,
 			[pagination.pageSize, pagination.offset]
 		),
 		get<{ total: number }>('SELECT COUNT(*) AS total FROM communication_logs'),

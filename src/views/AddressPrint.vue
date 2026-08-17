@@ -13,7 +13,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import type { CommunicationLog } from '@/types/hamlog';
+import type { CommunicationLog } from '@schema/communicationLog';
+import { selectCommunicationLogs } from '@/api/select';
 
 const communicationLogList = ref<CommunicationLog[]>([]);
 const printData = computed(() => {
@@ -32,10 +33,9 @@ const printData = computed(() => {
   return result;
 });
 
-fetch('/api/communicationLogs')
-  .then((response) => response.json())
-  .then((data) => {
-    communicationLogList.value.push(...data);
+selectCommunicationLogs()
+  .then((logs) => {
+    communicationLogList.value = logs.items;
   })
   .catch((error) => {
     console.error('Error fetching communication logs:', error);

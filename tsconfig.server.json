@@ -12,7 +12,8 @@
     "types": ["node"],
     "rootDir": ".",
     "paths": {
-      "@server/*": ["./server/*"]
+      "@server/*": ["./server/*"],
+      "@schema/*": ["./schema/*"]
     }
   }
 }

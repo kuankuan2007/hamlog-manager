@@ -37,7 +37,6 @@ export default defineConfig({
       open: true,
     }),
     VitePluginBuildInfo(),
-    VitePluginHamLog('C:\\Users\\kuankuan\\OneDrive\\文档\\通联日志.xlsx'),
   ],
   css: {
     postcss: {
@@ -66,6 +65,11 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+      },
+    },
   },
   build: {
     rollupOptions: {

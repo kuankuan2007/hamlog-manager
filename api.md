@@ -1,11 +1,69 @@
 # Hamlog Manager API
 
-Hamlog Manager 提供只读 HTTP API，用于查询通联记录、地址簿和 QSL 收发记录。
+Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发记录的 HTTP API。
 
 - 基础地址：`http://localhost:3000`
-- 所有接口均使用 `GET`
+- 查询接口使用 `GET`，写入接口使用 `POST`
 - 所有响应均为 JSON
 - 呼号查询不区分大小写；服务端会将路径中的呼号转换为大写后查询。
+
+## 写入接口
+
+### 新提交通联日志
+
+`POST /api/update/new-log`
+
+新增一条通联日志。请求体为 JSON；呼号会转换为大写后保存。`time` 必须使用 `YYYY-MM-DD HH:mm` 格式，并且必须是有效日期和时间。
+
+```json
+{
+  "time": "2026-08-17 12:34",
+  "callsign": "JA1ABC",
+  "frequency": 14.074,
+  "mode": "FT8",
+  "rxReport": -10,
+  "txReport": -8,
+  "summary": "备注"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `time` | string | 是 | 通联时间，格式为 `YYYY-MM-DD HH:mm` |
+| `callsign` | string | 是 | 对方呼号 |
+| `frequency` | number | 是 | 通联频率 |
+| `mode` | string | 是 | 通联模式 |
+| `rxReport` | integer | 是 | 接收报告 |
+| `txReport` | integer | 是 | 发送报告 |
+| `summary` | string | 否 | 通联摘要 |
+
+成功时返回状态 `200`、消息 `Done`。请求体不符合字段或时间格式要求时，返回状态 `10001`。
+
+### 新提交对方地址
+
+`POST /api/update/new-address`
+
+新增或更新指定呼号的最新地址。请求体为 JSON；呼号会转换为大写后保存。
+
+```json
+{
+  "callsign": "JA1ABC",
+  "postalCode": "100-0001",
+  "address": "Tokyo, Japan",
+  "recipientName": "Taro Yamada",
+  "updatedAt": "2026-08-17"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 对方呼号 |
+| `postalCode` | string | 是 | 邮政编码 |
+| `address` | string | 是 | 邮寄地址 |
+| `recipientName` | string | 否 | 收件人名称 |
+| `updatedAt` | string | 否 | 地址最后更新时间；未填写时默认为接口服务端当天日期 |
+
+成功时返回状态 `200`、消息 `Done`。
 
 ## 数据结构
 

@@ -8,6 +8,17 @@ export interface CommunicationLogBasic {
 	frequency: number;
 }
 
+export interface CommunicationLogSearchBasic {
+	callsign: string;
+	time: string;
+	frequency: number;
+}
+
+export interface CommunicationLogSearchResult {
+	callsign: string;
+	logs: CommunicationLogSearchBasic[];
+}
+
 interface CommunicationLogRow {
 	id: number;
 	time: string;
@@ -24,6 +35,7 @@ interface CommunicationLogRow {
 	updatedAt: string | null;
 	qslSendCallsign: string | null;
 	sentAt: string | null;
+	confirmedAt: string | null;
 	qslReceiveCallsign: string | null;
 	receivedAt: string | null;
 }
@@ -45,6 +57,7 @@ const communicationLogSelect = `
 		address.updated_at AS updatedAt,
 		qsl_send.callsign AS qslSendCallsign,
 		qsl_send.sent_at AS sentAt,
+		qsl_send.confirmed_at AS confirmedAt,
 		qsl_receive.callsign AS qslReceiveCallsign,
 		qsl_receive.received_at AS receivedAt
 	FROM communication_logs AS log
@@ -76,7 +89,11 @@ function toCommunicationLog(row: CommunicationLogRow): CommunicationLog {
 			};
 	const qslSent: QSLSend | null = row.qslSendCallsign === null
 		? null
-		: { callsign: row.qslSendCallsign, sentAt: row.sentAt ?? '' };
+		: {
+			callsign: row.qslSendCallsign,
+			sentAt: row.sentAt ?? '',
+			confirmedAt: row.confirmedAt,
+		};
 	const qslReceived: QSLReceive | null = row.qslReceiveCallsign === null
 		? null
 		: { callsign: row.qslReceiveCallsign, receivedAt: row.receivedAt ?? '' };
@@ -125,6 +142,54 @@ export async function selectCommunicationLogBasicsByCallsign(
 		 ORDER BY time DESC, id DESC`,
 		[normalizedCallsign]
 	);
+}
+
+export async function searchCommunicationLogBasics(
+	query: string
+): Promise<CommunicationLogSearchResult[]> {
+	await ready;
+	const normalizedQuery = normalizeCallsign(query);
+	if (normalizedQuery.length === 0) return [];
+
+	const rows = await all<CommunicationLogSearchBasic>(
+		`SELECT callsign, time, frequency
+		 FROM communication_logs
+		 WHERE instr(callsign, ?) > 0
+		 ORDER BY
+			CASE
+				WHEN callsign = ? THEN 1
+				WHEN substr(callsign, 1, length(?)) = ? THEN 2
+				WHEN substr(callsign, -length(?)) = ? THEN 3
+				WHEN length(?) <= 3 AND substr(callsign, -3, length(?)) = ? THEN 4
+				ELSE 5
+			END,
+			callsign ASC,
+			time DESC,
+			id DESC`,
+		[
+			normalizedQuery,
+			normalizedQuery,
+			normalizedQuery,
+			normalizedQuery,
+			normalizedQuery,
+			normalizedQuery,
+			normalizedQuery,
+			normalizedQuery,
+			normalizedQuery,
+		],
+	);
+
+	const results: CommunicationLogSearchResult[] = [];
+	for (const row of rows) {
+		const result = results.at(-1);
+		if (result?.callsign === row.callsign) {
+			result.logs.push(row);
+		} else {
+			results.push({ callsign: row.callsign, logs: [row] });
+		}
+	}
+
+	return results;
 }
 
 export async function selectCommunicationLogsByCallsign(callsign: string): Promise<CommunicationLog[]> {
@@ -193,7 +258,9 @@ export async function selectQSLReceivesByCallsign(callsign: string): Promise<QSL
 export async function selectQSLSends(): Promise<QSLSend[]> {
 	await ready;
 	return all<QSLSend>(
-		'SELECT callsign, sent_at AS sentAt FROM qsl_sends ORDER BY sent_at DESC, id DESC'
+		`SELECT callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
+		 FROM qsl_sends
+		 ORDER BY sent_at DESC, id DESC`
 	);
 }
 
@@ -201,7 +268,7 @@ export async function selectQSLSendsByCallsign(callsign: string): Promise<QSLSen
 	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	return all<QSLSend>(
-		`SELECT callsign, sent_at AS sentAt
+		`SELECT callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
 		 FROM qsl_sends
 		 WHERE callsign = ?
 		 ORDER BY sent_at DESC, id DESC`,

@@ -46,7 +46,17 @@ export function normalizeCallsign(callsign: string): string {
 	return callsign.toUpperCase();
 }
 
-export const ready = run('PRAGMA foreign_keys = ON').then(() => run(`
-	CREATE INDEX IF NOT EXISTS idx_communication_logs_callsign_time_frequency
-	ON communication_logs(callsign, time, frequency)
-`));
+async function migrateDatabase(): Promise<void> {
+	const columns = await all<{ name: string }>('PRAGMA table_info(qsl_sends)');
+	if (!columns.some((column) => column.name === 'confirmed_at')) {
+		await run('ALTER TABLE qsl_sends ADD COLUMN confirmed_at TEXT');
+	}
+	await run('PRAGMA user_version = 1');
+}
+
+export const ready = run('PRAGMA foreign_keys = ON')
+	.then(migrateDatabase)
+	.then(() => run(`
+		CREATE INDEX IF NOT EXISTS idx_communication_logs_callsign_time_frequency
+		ON communication_logs(callsign, time, frequency)
+	`));

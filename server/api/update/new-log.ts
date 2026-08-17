@@ -5,6 +5,7 @@ import {
 } from '../../schema';
 import type { CreateCommunicationLogInput } from '../../../schema/communicationLog';
 import { insertCommunicationLog } from '@server/database/update';
+import { doneStatue, invalidInputStatue } from '../status';
 
 export const newLogRouter = new Router({
   matcher: 'new-log',
@@ -16,14 +17,12 @@ export const newLogRouter = new Router({
     }
     const input = (await req.json()) as CreateCommunicationLogInput;
     if (!validateCreateCommunicationLogInput(input)) {
-      ctx.statue = new Statue(
-        10001,
-        formatCreateCommunicationLogInputErrors(validateCreateCommunicationLogInput.errors),
-        false
+      ctx.statue = invalidInputStatue(
+        formatCreateCommunicationLogInputErrors(validateCreateCommunicationLogInput.errors)
       );
       return;
     }
     await insertCommunicationLog(input);
-    ctx.statue = new Statue(200, 'Done', true);
+    ctx.statue = doneStatue();
   },
 });

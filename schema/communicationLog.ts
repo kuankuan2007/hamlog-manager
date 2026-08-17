@@ -17,11 +17,27 @@ export interface CommunicationLog {
 export interface QSLSend {
 	callsign: string;
 	sentAt: string;
+	confirmedAt: string | null;
 }
 
 export interface QSLReceive {
 	callsign: string;
 	receivedAt: string;
+}
+
+export interface CreateQSLSendInput {
+	callsign: string;
+	sentAt: string;
+}
+
+export interface CreateQSLReceiveInput {
+	callsign: string;
+	receivedAt: string;
+}
+
+export interface ConfirmQSLSendInput {
+	callsign: string;
+	confirmedAt: string;
 }
 
 export interface LogBook {
@@ -41,7 +57,9 @@ export interface CreateCommunicationLogInput {
 	summary?: string;
 }
 
+export const datePattern = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 export const dateTimePattern = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01]\d|2[0-3]):([0-5]\d)$/;
+export const DateFormatName = 'hamlog-date';
 export const DateTimeFormatName = 'hamlog-date-time';
 
 export function isLeapYear(year: number): boolean {
@@ -51,6 +69,14 @@ export function isLeapYear(year: number): boolean {
 export function getDaysInMonth(year: number, month: number): number {
 	if (month === 2) return isLeapYear(year) ? 29 : 28;
 	return [4, 6, 9, 11].includes(month) ? 30 : 31;
+}
+
+export function isValidDate(value: string): boolean {
+	const match = datePattern.exec(value);
+	if (match === null) return false;
+
+	const [, yearText, monthText, dayText] = match;
+	return Number(dayText) <= getDaysInMonth(Number(yearText), Number(monthText));
 }
 
 export function isValidDateTime(value: string): boolean {
@@ -75,6 +101,12 @@ export const DateTimeSchema = {
 	format: DateTimeFormatName,
 };
 
+export const DateSchema = {
+	type: 'string',
+	pattern: datePattern.source,
+	format: DateFormatName,
+};
+
 export const CreateCommunicationLogInputSchema = {
 	type: 'object',
 	additionalProperties: false,
@@ -88,4 +120,38 @@ export const CreateCommunicationLogInputSchema = {
 		summary: { type: 'string' },
 	},
 	required: ['time', 'callsign', 'frequency', 'mode', 'rxReport', 'txReport'],
+};
+
+const QSLInputProperties = {
+	callsign: { type: 'string', minLength: 1 },
+};
+
+export const CreateQSLSendInputSchema = {
+	type: 'object',
+	additionalProperties: false,
+	properties: {
+		...QSLInputProperties,
+		sentAt: DateSchema,
+	},
+	required: ['callsign', 'sentAt'],
+};
+
+export const CreateQSLReceiveInputSchema = {
+	type: 'object',
+	additionalProperties: false,
+	properties: {
+		...QSLInputProperties,
+		receivedAt: DateSchema,
+	},
+	required: ['callsign', 'receivedAt'],
+};
+
+export const ConfirmQSLSendInputSchema = {
+	type: 'object',
+	additionalProperties: false,
+	properties: {
+		...QSLInputProperties,
+		confirmedAt: DateSchema,
+	},
+	required: ['callsign', 'confirmedAt'],
 };

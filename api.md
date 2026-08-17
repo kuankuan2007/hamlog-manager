@@ -7,6 +7,16 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 - 所有响应均为 JSON
 - 呼号查询不区分大小写；服务端会将路径中的呼号转换为大写后查询。
 
+## 响应状态
+
+写入接口使用以下项目自定义状态。状态 `200` 表示操作成功；`10001` 与 `10002` 表示业务失败，响应中的成功标记为 `false`。
+
+| 状态 | 消息 | 作用和表示内容 |
+| --- | --- | --- |
+| `200` | `Done` | 写入操作已成功完成。 |
+| `10001` | 具体校验错误信息 | 请求体未通过输入校验，例如缺少必填字段、字段类型不符，或日期/时间格式无效。日期格式错误消息为 `invalid date format`，通联时间格式错误消息为 `invalid time format`。 |
+| `10002` | `No QSL send record found for callsign: {callsign}` | 确认 QSL 发件收件时，指定呼号不存在任何 QSL 发件记录。 |
+
 ## 写入接口
 
 ### 新提交通联日志
@@ -37,7 +47,7 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 | `txReport` | integer | 是 | 发送报告 |
 | `summary` | string | 否 | 通联摘要 |
 
-成功时返回状态 `200`、消息 `Done`。请求体不符合字段或时间格式要求时，返回状态 `10001`。
+响应状态参见[响应状态](#响应状态)。
 
 ### 新提交对方地址
 
@@ -63,7 +73,67 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 | `recipientName` | string | 否 | 收件人名称 |
 | `updatedAt` | string | 否 | 地址最后更新时间；未填写时默认为接口服务端当天日期 |
 
-成功时返回状态 `200`、消息 `Done`。
+响应状态参见[响应状态](#响应状态)。
+
+### 新提交 QSL 发件记录
+
+`POST /api/update/new-qsl-send`
+
+新增一条 QSL 发件记录。新记录的收件确认时间固定为 `null`，不能通过此接口传入。
+
+```json
+{
+  "callsign": "JA1ABC",
+  "sentAt": "2026-08-17"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 对方呼号 |
+| `sentAt` | string | 是 | QSL 发件日期 |
+
+响应状态参见[响应状态](#响应状态)。
+
+### 新提交 QSL 收件记录
+
+`POST /api/update/new-qsl-receive`
+
+新增一条 QSL 收件记录。
+
+```json
+{
+  "callsign": "JA1ABC",
+  "receivedAt": "2026-08-18"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 对方呼号 |
+| `receivedAt` | string | 是 | QSL 收件日期 |
+
+响应状态参见[响应状态](#响应状态)。
+
+### 确认 QSL 发件收件
+
+`POST /api/update/confirm-qsl-send`
+
+将指定呼号按发件日期和记录序号倒序排列后的最新一条 QSL 发件记录的收件确认时间更新为 `confirmedAt`。
+
+```json
+{
+  "callsign": "JA1ABC",
+  "confirmedAt": "2026-08-18"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 对方呼号 |
+| `confirmedAt` | string | 是 | 对方确认收到卡片的时间 |
+
+响应状态参见[响应状态](#响应状态)。
 
 ## 数据结构
 
@@ -136,7 +206,8 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 ```json
 {
   "callsign": "JA1ABC",
-  "sentAt": "2026-08-17"
+  "sentAt": "2026-08-17",
+  "confirmedAt": null
 }
 ```
 
@@ -144,6 +215,7 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 | --- | --- | --- |
 | `callsign` | string | 呼号 |
 | `sentAt` | string | QSL 发件日期 |
+| `confirmedAt` | string 或 `null` | 对方确认收到卡片的时间；未确认时为 `null` |
 
 ### QSLReceive
 
@@ -244,6 +316,37 @@ GET /api/select/communication-log/JA1ABC
 
 ```text
 GET /api/select/communication-log/JA1ABC/basic
+```
+
+### 模糊查询通联摘要
+
+`GET /api/select/communication-log/search/{query}`
+
+按输入字符串模糊匹配呼号，并按呼号聚合返回通联时间和频率。匹配及呼号排序优先级依次为：精确匹配、从呼号头部开始匹配、从呼号尾部开始匹配、从倒数第 3 位开始匹配（仅输入长度不超过 3 时）、其他中间匹配。呼号查询不区分大小写。
+
+| 路径参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `query` | string | 是 | 要匹配的呼号片段；应进行 URL 编码 |
+
+返回按呼号聚合的数组；每个分组中的日志按通联时间倒序、记录序号倒序排列。
+
+```json
+[
+  {
+    "callsign": "JA1ABC",
+    "logs": [
+      {
+        "callsign": "JA1ABC",
+        "time": "2026-08-17 12:34",
+        "frequency": 14.074
+      }
+    ]
+  }
+]
+```
+
+```text
+GET /api/select/communication-log/search/1AB
 ```
 
 ## 地址簿

@@ -5,6 +5,7 @@ import {
 } from '../../schema';
 import type { CreateAddressInput, CreateAddressRequest } from '../../../schema/address';
 import { upsertAddress } from '@server/database/update';
+import { doneStatue, invalidInputStatue } from '../status';
 
 function getToday(): string {
 	const today = new Date();
@@ -25,10 +26,8 @@ export const newAddressRouter = new Router({
 		}
 		const request = (await req.json()) as CreateAddressRequest;
 		if (!validateCreateAddressRequest(request)) {
-			ctx.statue = new Statue(
-				10001,
-				formatCreateAddressInputErrors(validateCreateAddressRequest.errors),
-				false
+			ctx.statue = invalidInputStatue(
+				formatCreateAddressInputErrors(validateCreateAddressRequest.errors)
 			);
 			return;
 		}
@@ -37,6 +36,6 @@ export const newAddressRouter = new Router({
 			updatedAt: request.updatedAt ?? getToday(),
 		};
 		await upsertAddress(input);
-		ctx.statue = new Statue(200, 'Done', true);
+		ctx.statue = doneStatue();
 	},
 });

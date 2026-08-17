@@ -1,12 +1,21 @@
-import type { CreateCommunicationLogInput } from '../../schema/communicationLog';
+import type {
+	ConfirmQSLSendInput,
+	CreateCommunicationLogInput,
+	CreateQSLReceiveInput,
+	CreateQSLSendInput,
+} from '../../schema/communicationLog';
 import type { CreateAddressInput } from '../../schema/address';
 import type { Address } from '../../schema/address';
 import type { CommunicationLog, QSLReceive, QSLSend } from '../../schema/communicationLog';
 import {
 	formatCreateAddressInputErrors,
 	formatCreateCommunicationLogInputErrors,
+	formatDateInputErrors,
 	validateCreateAddressInput,
+	validateConfirmQSLSendInput,
 	validateCreateCommunicationLogInput,
+	validateCreateQSLReceiveInput,
+	validateCreateQSLSendInput,
 } from '../schema';
 import { get, normalizeCallsign, ready, run, runAndGetId } from './index';
 
@@ -20,6 +29,13 @@ interface QSLSendRow extends QSLSend {
 
 interface QSLReceiveRow extends QSLReceive {
 	id: number;
+}
+
+export class QSLSendNotFoundError extends Error {
+	constructor(callsign: string) {
+		super(`No QSL send record found for callsign: ${callsign}`);
+		this.name = 'QSLSendNotFoundError';
+	}
 }
 
 export async function upsertAddress(input: CreateAddressInput): Promise<Address> {
@@ -67,7 +83,7 @@ function findAddressByCallsign(callsign: string): Promise<AddressRow | undefined
 
 function findLatestQSLSendByCallsign(callsign: string): Promise<QSLSendRow | undefined> {
 	return get<QSLSendRow>(
-		`SELECT id, callsign, sent_at AS sentAt
+		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
 		 FROM qsl_sends
 		 WHERE callsign = ?
 		 ORDER BY sent_at DESC, id DESC
@@ -85,6 +101,69 @@ function findLatestQSLReceiveByCallsign(callsign: string): Promise<QSLReceiveRow
 		 LIMIT 1`,
 		[callsign]
 	);
+}
+
+export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend> {
+	const normalizedInput: CreateQSLSendInput = {
+		...input,
+		callsign: normalizeCallsign(input.callsign),
+	};
+
+	if (!validateCreateQSLSendInput(normalizedInput)) {
+		throw new Error(`Invalid QSL send input: ${formatDateInputErrors(validateCreateQSLSendInput.errors, 'sentAt')}`);
+	}
+
+	await ready;
+	await run(
+		'INSERT INTO qsl_sends (callsign, sent_at, confirmed_at) VALUES (?, ?, NULL)',
+		[normalizedInput.callsign, normalizedInput.sentAt]
+	);
+	return { ...normalizedInput, confirmedAt: null };
+}
+
+export async function insertQSLReceive(input: CreateQSLReceiveInput): Promise<QSLReceive> {
+	const normalizedInput: CreateQSLReceiveInput = {
+		...input,
+		callsign: normalizeCallsign(input.callsign),
+	};
+
+	if (!validateCreateQSLReceiveInput(normalizedInput)) {
+		throw new Error(`Invalid QSL receive input: ${formatDateInputErrors(validateCreateQSLReceiveInput.errors, 'receivedAt')}`);
+	}
+
+	await ready;
+	await run(
+		'INSERT INTO qsl_receives (callsign, received_at) VALUES (?, ?)',
+		[normalizedInput.callsign, normalizedInput.receivedAt]
+	);
+	return normalizedInput;
+}
+
+export async function confirmLatestQSLSend(input: ConfirmQSLSendInput): Promise<QSLSend> {
+	const normalizedInput: ConfirmQSLSendInput = {
+		...input,
+		callsign: normalizeCallsign(input.callsign),
+	};
+
+	if (!validateConfirmQSLSendInput(normalizedInput)) {
+		throw new Error(`Invalid QSL send confirmation input: ${formatDateInputErrors(validateConfirmQSLSendInput.errors, 'confirmedAt')}`);
+	}
+
+	await ready;
+	const qslSend = await findLatestQSLSendByCallsign(normalizedInput.callsign);
+	if (qslSend === undefined) {
+		throw new QSLSendNotFoundError(normalizedInput.callsign);
+	}
+
+	await run('UPDATE qsl_sends SET confirmed_at = ? WHERE id = ?', [
+		normalizedInput.confirmedAt,
+		qslSend.id,
+	]);
+	return {
+		callsign: qslSend.callsign,
+		sentAt: qslSend.sentAt,
+		confirmedAt: normalizedInput.confirmedAt,
+	};
 }
 
 export async function insertCommunicationLog(
@@ -149,7 +228,11 @@ export async function insertCommunicationLog(
 				},
 			qslSent: qslSent === undefined
 				? null
-				: { callsign: qslSent.callsign, sentAt: qslSent.sentAt },
+				: {
+					callsign: qslSent.callsign,
+					sentAt: qslSent.sentAt,
+					confirmedAt: qslSent.confirmedAt,
+				},
 			qslReceived: qslReceived === undefined
 				? null
 				: { callsign: qslReceived.callsign, receivedAt: qslReceived.receivedAt },

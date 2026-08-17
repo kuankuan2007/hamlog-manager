@@ -1,6 +1,7 @@
 import Router from '@kuankuan/k-server';
 import { SelectAddressByCallsignRouter, SelectAddressesRouter } from './address';
 import {
+	SearchCommunicationLogBasicsRouter,
   SelectCommunicationLogBasicsByCallsignRouter,
   SelectCommunicationLogsByCallsignRouter,
   SelectCommunicationLogsRouter,
@@ -16,6 +17,7 @@ export const SelectRouter = new Router({
 SelectRouter.addRouter(SelectCommunicationLogsRouter);
 SelectRouter.addRouter(SelectCommunicationLogsByCallsignRouter);
 SelectRouter.addRouter(SelectCommunicationLogBasicsByCallsignRouter);
+SelectRouter.addRouter(SearchCommunicationLogBasicsRouter);
 SelectRouter.addRouter(SelectAddressesRouter);
 SelectRouter.addRouter(SelectAddressByCallsignRouter);
 SelectRouter.addRouter(SelectQSLReceivesRouter);

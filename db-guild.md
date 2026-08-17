@@ -50,6 +50,7 @@ erDiagram
         INTEGER id PK
         TEXT callsign
         TEXT sent_at
+		TEXT confirmed_at
         TEXT note
     }
     QSL_RECEIVES {
@@ -110,6 +111,7 @@ QSL 发件记录。一条呼号可保留多次发件历史；`callsign` 未设�
 | `id` | `INTEGER` | 否 | PK，AUTOINCREMENT | 内部标识 |
 | `callsign` | `TEXT` | 否 | 无 | 对方呼号 |
 | `sent_at` | `TEXT` | 否 | 无 | 发件日期 |
+| `confirmed_at` | `TEXT` | 是 | 无 | 对方确认收到卡片的时间；`NULL` 表示未确认 |
 | `note` | `TEXT` | 是 | 无 | 备注；当前只读 API 未返回 |
 
 ### `qsl_receives`
@@ -170,6 +172,7 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 | `addresses.recipient_name` | `recipientName` |
 | `addresses.updated_at` | `updatedAt` |
 | `qsl_sends.sent_at` | `sentAt` |
+| `qsl_sends.confirmed_at` | `confirmedAt` |
 | `qsl_receives.received_at` | `receivedAt` |
 
 按呼号查询前，服务会使用 `toUpperCase()` 规范化查询参数；写入数据时也应统一存储大写呼号，避免 SQLite 默认二进制文本比较产生大小写不匹配。通联列表按 `time DESC, id DESC` 排序，按呼号的通联列表也采用该顺序。为使文本排序等同于时间顺序，应持续使用零填充、从高到低排列的格式，例如 `YYYY-MM-DD HH:mm` 或 `YYYY-MM-DD HH:mm:ss`。
@@ -177,7 +180,7 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 ## 维护注意事项
 
 - SQLite 的外键定义默认不会自动启用。实测当前只读连接的 `PRAGMA foreign_keys` 为 `0`；任何负责写入或删除的连接都应在打开后执行 `PRAGMA foreign_keys = ON`，否则 `ON DELETE SET NULL`、级联更新和外键校验不会生效。
-- 当前不存在迁移表或 schema 版本管理，`PRAGMA user_version` 为 `0`。变更表结构、索引或约束时，应引入可重复执行的迁移并同步更新版本号。
+- 服务启动时会执行可重复的模式迁移；当前 `PRAGMA user_version` 为 `1`。变更表结构、索引或约束时，应同步更新迁移与版本号。
 - 日期和时间字段均是 `TEXT`，且未由 `CHECK` 约束验证；应用层必须负责格式与时区约定。
 - `note` 字段和 QSL 记录的内部 `id` 未暴露给现有只读 API。扩展接口时需决定是否公开这些字段。
 

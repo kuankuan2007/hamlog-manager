@@ -1,12 +1,15 @@
 import Router from '@kuankuan/k-server';
 import {
+  searchCommunicationLogBasics,
   selectCommunicationLogBasicsByCallsign,
   selectCommunicationLogs,
   selectCommunicationLogsByCallsign,
 } from '@server/database/select';
 
 function getCallsign(pathname: string, suffix = ''): string {
-  const callsign = pathname.match(new RegExp(`^/api/select/communication-log/([^/]+)${suffix}$`))?.[1];
+  const callsign = pathname.match(
+    new RegExp(`^/api/select/communication-log/([^/]+)${suffix}$`)
+  )?.[1];
   return decodeURIComponent(callsign ?? '');
 }
 
@@ -33,6 +36,24 @@ export const SelectCommunicationLogBasicsByCallsignRouter = new Router({
   matcher: (pathname) => /^\/communication-log\/[^/]+\/basic$/.test(pathname),
   name: 'communication-log-basics-by-callsign',
   onRootMatch: async (request, _response, ctx) => {
-    ctx.data = await selectCommunicationLogBasicsByCallsign(getCallsign(request.ourl.pathname, '/basic'));
+    ctx.data = await selectCommunicationLogBasicsByCallsign(
+      getCallsign(request.ourl.pathname, '/basic')
+    );
   },
 });
+
+export const SearchCommunicationLogBasicsRouter = new Router({
+  matcher: 'search-log',
+  name: 'search-communication-log-basics',
+  onRootMatch: async (request, _response, ctx) => {
+    const query = request.ourl.searchParams.get('query') ?? '';
+    if (!query || query.trim() === '') {
+      ctx.data = [];
+      return;
+    }
+    ctx.data = await searchCommunicationLogBasics(
+      query
+    );
+  },
+});
+

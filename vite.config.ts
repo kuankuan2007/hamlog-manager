@@ -10,7 +10,6 @@ import postcssPresetEnv from 'postcss-preset-env';
 import autoprefixer from 'autoprefixer';
 import cssnano from 'cssnano';
 import VitePluginBuildInfo from './vite-plugin/build-info';
-import VitePluginHamLog from './vite-plugin/hamlog';
 
 const sassAddition = `
 @use '@/styles/theme.scss';

@@ -253,6 +253,54 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 
 `page` 与 `pageSize` 会被向下取整，且最小值为 `1`。未传 `page` 时，实际页码为 `1`；未传 `pageSize` 时，默认每页 `100` 条。
 
+## 自动查询
+
+### 按呼号查询电子邮箱
+
+`GET /api/auto/callsign2email`
+
+查询指定呼号的电子邮箱地址。默认优先返回缓存；缓存不存在时，从 QRZ.com 现场查询。现场查询成功的邮箱会以 `select:qrz.com` 为来源写入缓存。
+
+| 查询参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 要查询的业余无线电呼号；应进行 URL 编码 |
+| `mode` | string | 否 | 查询模式，默认为 `auto`；取值见下表 |
+
+| `mode` | 行为 |
+| --- | --- |
+| `auto` | 有缓存时返回缓存；没有缓存时现场查询。 |
+| `cache` | 只查询缓存；没有缓存时不进行现场查询。 |
+| `fallback` | 强制现场查询；查询不到邮箱时返回缓存。 |
+| `realtime` | 强制现场查询；查询不到邮箱时直接返回 `null`。 |
+
+返回对象字段如下。`comeFrom` 仅在 `email` 不为 `null` 时存在。`lastUpdate` 表示缓存记录或成功现场查询写入缓存的时间；当 `email` 为 `null` 且 `realtime` 为 `false` 时该字段不存在。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `callsign` | string | 规范化为大写后的查询呼号 |
+| `email` | string 或 `null` | 查询到的邮箱地址 |
+| `comeFrom` | string，可选 | 数据来源：`select:qrz.com` 或 `manual` |
+| `realtime` | boolean | `true` 表示本次现场抓取，`false` 表示使用缓存；`manual` 缓存记录固定为 `false` |
+| `lastUpdate` | string，可选 | 缓存记录的更新时间，格式为 `YYYY-MM-DD HH:mm` |
+| `mode` | string | 本次使用的查询模式 |
+
+未提供 `callsign` 时，响应状态为 `10001`，消息为 `callsign is required`。`mode` 不是 `auto`、`cache`、`fallback` 或 `realtime` 时，响应状态为 `10001`。
+
+```text
+GET /api/auto/callsign2email?callsign=JA1ABC
+```
+
+```json
+{
+  "callsign": "JA1ABC",
+  "email": "operator@example.com",
+  "comeFrom": "select:qrz.com",
+  "realtime": true,
+  "lastUpdate": "2026-08-18 16:43",
+  "mode": "auto"
+}
+```
+
 ## 通联记录
 
 ### 查询通联记录列表

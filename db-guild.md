@@ -10,10 +10,10 @@
 | 编码 | UTF-8 |
 | 页大小 | 4096 字节 |
 | 日志模式 | WAL |
-| `user_version` | 0 |
-| 业务表 | `communication_logs`、`addresses`、`qsl_sends`、`qsl_receives` |
+| `user_version` | 2 |
+| 业务表 | `communication_logs`、`addresses`、`qsl_sends`、`qsl_receives`、`callsign_email_cache` |
 | 视图 / 触发器 | 无 / 无 |
-| 自动增长状态 | 四张业务表均以 `INTEGER PRIMARY KEY AUTOINCREMENT` 生成主键 |
+| 自动增长状态 | 五张业务表均以 `INTEGER PRIMARY KEY AUTOINCREMENT` 生成主键 |
 
 `sqlite_sequence` 为 SQLite 自动维护的内部表，不应由应用直接修改。
 
@@ -125,6 +125,18 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 | `received_at` | `TEXT` | 否 | 无 | 收件日期 |
 | `note` | `TEXT` | 是 | 无 | 备注；当前只读 API 未返回 |
 
+### `callsign_email_cache`
+
+呼号邮箱缓存历史。`callsign` 是查询键而非唯一约束，因此同一呼号可保存多条来自不同来源或不同时间的记录；读取时按 `updated_at DESC, id DESC` 取最新一条。
+
+| 字段 | SQLite 类型 | 可空 | 约束 | 说明 |
+| --- | --- | --- | --- | --- |
+| `id` | `INTEGER` | 否 | PK，AUTOINCREMENT | 内部排序标识，不对 API 暴露 |
+| `callsign` | `TEXT` | 否 | 无 | 大写规范化后的查询呼号 |
+| `email` | `TEXT` | 否 | 无 | 缓存的邮箱地址 |
+| `updated_at` | `TEXT` | 否 | 无 | 更新时间，格式为 `YYYY-MM-DD HH:mm` |
+| `provider` | `TEXT` | 否 | 无 | 数据来源，例如 `select:qrz.com` 或 `manual` |
+
 ## 索引
 
 除 `addresses.callsign` 的唯一约束自动生成的索引外，数据库有 10 个显式索引。全部为非唯一、非部分索引。
@@ -142,6 +154,7 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 | `communication_logs` | `idx_communication_logs_qsl_receive_id` | `qsl_receive_id` | QSL 收件关联查找与外键维护 |
 | `qsl_sends` | `idx_qsl_sends_callsign` | `callsign` | 按呼号筛选发件记录 |
 | `qsl_receives` | `idx_qsl_receives_callsign` | `callsign` | 按呼号筛选收件记录 |
+| `callsign_email_cache` | `idx_callsign_email_cache_callsign_updated_at_id` | `callsign`, `updated_at DESC`, `id DESC` | 按呼号获取最新邮箱缓存 |
 
 `idx_addresses_callsign` 与唯一自动索引使用相同键列；SQLite 可使用唯一自动索引完成相同的等值查询。是否移除显式重复索引应在确认没有写入端依赖其名称后通过迁移处理。
 
@@ -180,7 +193,7 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 ## 维护注意事项
 
 - SQLite 的外键定义默认不会自动启用。实测当前只读连接的 `PRAGMA foreign_keys` 为 `0`；任何负责写入或删除的连接都应在打开后执行 `PRAGMA foreign_keys = ON`，否则 `ON DELETE SET NULL`、级联更新和外键校验不会生效。
-- 服务启动时会执行可重复的模式迁移；当前 `PRAGMA user_version` 为 `1`。变更表结构、索引或约束时，应同步更新迁移与版本号。
+- 服务启动时会执行可重复的模式迁移；当前 `PRAGMA user_version` 为 `2`。变更表结构、索引或约束时，应同步更新迁移与版本号。
 - 日期和时间字段均是 `TEXT`，且未由 `CHECK` 约束验证；应用层必须负责格式与时区约定。
 - `note` 字段和 QSL 记录的内部 `id` 未暴露给现有只读 API。扩展接口时需决定是否公开这些字段。
 

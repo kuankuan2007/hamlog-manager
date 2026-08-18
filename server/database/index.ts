@@ -51,7 +51,20 @@ async function migrateDatabase(): Promise<void> {
 	if (!columns.some((column) => column.name === 'confirmed_at')) {
 		await run('ALTER TABLE qsl_sends ADD COLUMN confirmed_at TEXT');
 	}
-	await run('PRAGMA user_version = 1');
+	await run(`
+		CREATE TABLE IF NOT EXISTS callsign_email_cache (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			callsign TEXT NOT NULL,
+			email TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			provider TEXT NOT NULL
+		)
+	`);
+	await run(`
+		CREATE INDEX IF NOT EXISTS idx_callsign_email_cache_callsign_updated_at_id
+		ON callsign_email_cache(callsign, updated_at DESC, id DESC)
+	`);
+	await run('PRAGMA user_version = 2');
 }
 
 export const ready = run('PRAGMA foreign_keys = ON')

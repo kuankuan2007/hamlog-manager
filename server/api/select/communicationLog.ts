@@ -1,5 +1,6 @@
 import Router from '@kuankuan/k-server';
 import {
+	type CommunicationLogFilters,
   searchCommunicationLogBasics,
   selectCommunicationLogBasicsByCallsign,
   selectCommunicationLogs,
@@ -13,13 +14,35 @@ function getCallsign(pathname: string, suffix = ''): string {
   return decodeURIComponent(callsign ?? '');
 }
 
+function getBooleanFilter(value: string | null): boolean | undefined {
+  if (value === null) return undefined;
+  if (value.toLowerCase() === 'true') return true;
+  if (value.toLowerCase() === 'false') return false;
+  return undefined;
+}
+
+function getCommunicationLogFilters(searchParams: URLSearchParams): CommunicationLogFilters {
+  return {
+    qslSent: getBooleanFilter(searchParams.get('qslSent')),
+    qslReceived: getBooleanFilter(searchParams.get('qslReceived')),
+    hasAddress: getBooleanFilter(searchParams.get('hasAddress')),
+    deduplicateCallsigns: getBooleanFilter(
+      searchParams.get('deduplicateCallsigns')
+    ),
+  };
+}
+
 export const SelectCommunicationLogsRouter = new Router({
   matcher: (pathname) => pathname === '/communication-log',
   name: 'communication-log',
   onRootMatch: async (request, _response, ctx) => {
     const page = request.ourl.searchParams.get('page') ?? 0;
     const pageSize = request.ourl.searchParams.get('pageSize') ?? 100;
-    const result = await selectCommunicationLogs(Number(page), Number(pageSize));
+    const result = await selectCommunicationLogs(
+      Number(page),
+      Number(pageSize),
+      getCommunicationLogFilters(request.ourl.searchParams)
+    );
     ctx.data = result;
   },
 });

@@ -51,22 +51,36 @@ export async function upsertAddress(input: CreateAddressInput): Promise<Address>
 	}
 
 	await ready;
-	await run(
-		`INSERT INTO addresses (callsign, postal_code, address, recipient_name, updated_at)
-		 VALUES (?, ?, ?, ?, ?)
-		 ON CONFLICT(callsign) DO UPDATE SET
-			postal_code = excluded.postal_code,
-			address = excluded.address,
-			recipient_name = excluded.recipient_name,
-			updated_at = excluded.updated_at`,
-		[
-			normalizedInput.callsign,
-			normalizedInput.postalCode,
-			normalizedInput.address,
-			normalizedInput.recipientName ?? null,
-			normalizedInput.updatedAt,
-		]
-	);
+	await run('BEGIN');
+	try {
+		await run(
+			`INSERT INTO addresses (callsign, postal_code, address, recipient_name, updated_at)
+			 VALUES (?, ?, ?, ?, ?)
+			 ON CONFLICT(callsign) DO UPDATE SET
+				postal_code = excluded.postal_code,
+				address = excluded.address,
+				recipient_name = excluded.recipient_name,
+				updated_at = excluded.updated_at`,
+			[
+				normalizedInput.callsign,
+				normalizedInput.postalCode,
+				normalizedInput.address,
+				normalizedInput.recipientName ?? null,
+				normalizedInput.updatedAt,
+			]
+		);
+		const address = await findAddressByCallsign(normalizedInput.callsign);
+		await run(
+			`UPDATE communication_logs
+			 SET address_id = ?
+			 WHERE callsign = ? AND address_id IS NULL`,
+			[address?.id ?? null, normalizedInput.callsign]
+		);
+		await run('COMMIT');
+	} catch (error) {
+		await run('ROLLBACK');
+		throw error;
+	}
 
 	return normalizedInput;
 }
@@ -114,10 +128,23 @@ export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend>
 	}
 
 	await ready;
-	await run(
-		'INSERT INTO qsl_sends (callsign, sent_at, confirmed_at) VALUES (?, ?, NULL)',
-		[normalizedInput.callsign, normalizedInput.sentAt]
-	);
+	await run('BEGIN');
+	try {
+		const qslSendId = await runAndGetId(
+			'INSERT INTO qsl_sends (callsign, sent_at, confirmed_at) VALUES (?, ?, NULL)',
+			[normalizedInput.callsign, normalizedInput.sentAt]
+		);
+		await run(
+			`UPDATE communication_logs
+			 SET qsl_send_id = ?
+			 WHERE callsign = ? AND qsl_send_id IS NULL`,
+			[qslSendId, normalizedInput.callsign]
+		);
+		await run('COMMIT');
+	} catch (error) {
+		await run('ROLLBACK');
+		throw error;
+	}
 	return { ...normalizedInput, confirmedAt: null };
 }
 
@@ -132,10 +159,23 @@ export async function insertQSLReceive(input: CreateQSLReceiveInput): Promise<QS
 	}
 
 	await ready;
-	await run(
-		'INSERT INTO qsl_receives (callsign, received_at) VALUES (?, ?)',
-		[normalizedInput.callsign, normalizedInput.receivedAt]
-	);
+	await run('BEGIN');
+	try {
+		const qslReceiveId = await runAndGetId(
+			'INSERT INTO qsl_receives (callsign, received_at) VALUES (?, ?)',
+			[normalizedInput.callsign, normalizedInput.receivedAt]
+		);
+		await run(
+			`UPDATE communication_logs
+			 SET qsl_receive_id = ?
+			 WHERE callsign = ? AND qsl_receive_id IS NULL`,
+			[qslReceiveId, normalizedInput.callsign]
+		);
+		await run('COMMIT');
+	} catch (error) {
+		await run('ROLLBACK');
+		throw error;
+	}
 	return normalizedInput;
 }
 
@@ -217,25 +257,9 @@ export async function insertCommunicationLog(
 			...normalizedInput,
 			sequenceNumber,
 			callsign,
-			address: address === undefined
-				? undefined
-				: {
-					callsign: address.callsign,
-					postalCode: address.postalCode,
-					address: address.address,
-					recipientName: address.recipientName,
-					updatedAt: address.updatedAt,
-				},
-			qslSent: qslSent === undefined
-				? null
-				: {
-					callsign: qslSent.callsign,
-					sentAt: qslSent.sentAt,
-					confirmedAt: qslSent.confirmedAt,
-				},
-			qslReceived: qslReceived === undefined
-				? null
-				: { callsign: qslReceived.callsign, receivedAt: qslReceived.receivedAt },
+			hasAddress: address !== undefined,
+			qslSent: qslSent !== undefined,
+			qslReceived: qslReceived !== undefined,
 		};
 	} catch (error) {
 		await run('ROLLBACK');

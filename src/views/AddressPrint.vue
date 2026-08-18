@@ -13,33 +13,33 @@
   </div>
 </template>
 <script setup lang="ts">
-import type { CommunicationLog } from '@schema/communicationLog';
-import { selectCommunicationLogs } from '@/api/select';
+import type { Address } from '@schema/address';
+import { selectAddressesByCallsigns, selectCommunicationLogs } from '@/api/select';
 
-const communicationLogList = ref<CommunicationLog[]>([]);
-const printData = computed(() => {
-  const filtered = communicationLogList.value
-    .filter((log) => log.address && log.qslSent === null)
-    .map((log) => ({
-      ...log.address,
-      callsign: log.callsign,
-    }));
-  const result: typeof filtered = [];
-  for (const item of filtered) {
-    if (!result.some((existing) => existing.callsign === item.callsign)) {
-      result.push(item);
-    }
-  }
-  return result;
+const pageSize = 100;
+const printData = ref<Address[]>([]);
+
+async function loadPrintData(): Promise<void> {
+  const filters = {
+    qslSent: false,
+    hasAddress: true,
+    deduplicateCallsigns: true,
+  };
+  const firstPage = await selectCommunicationLogs(1, pageSize, filters);
+  const pageCount = Math.ceil(firstPage.total / pageSize);
+  const remainingPages = await Promise.all(
+    Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
+      selectCommunicationLogs(index + 2, pageSize, filters)
+    )
+  );
+  const callsigns = firstPage.items.concat(...remainingPages.map((page) => page.items))
+    .map((log) => log.callsign);
+  printData.value = await selectAddressesByCallsigns(callsigns);
+}
+
+loadPrintData().catch((error) => {
+  console.error('Error fetching print addresses:', error);
 });
-
-selectCommunicationLogs()
-  .then((logs) => {
-    communicationLogList.value = logs.items;
-  })
-  .catch((error) => {
-    console.error('Error fetching communication logs:', error);
-  });
 </script>
 <style scoped lang="scss">
 .address-list {

@@ -1,5 +1,9 @@
 import Router from '@kuankuan/k-server';
-import { selectAddressByCallsign, selectAddresses } from '@server/database/select';
+import {
+  selectAddressByCallsign,
+  selectAddresses,
+  selectAddressesByCallsigns,
+} from '@server/database/select';
 
 function getCallsign(pathname: string): string {
   const callsign = pathname.match(/^\/api\/select\/address\/([^/]+)$/)?.[1];
@@ -13,6 +17,15 @@ export const SelectAddressesRouter = new Router({
     const page = request.ourl.searchParams.get('page') ?? 0;
     const pageSize = request.ourl.searchParams.get('pageSize') ?? 100;
     ctx.data = await selectAddresses(Number(page), Number(pageSize));
+  },
+});
+
+export const SelectAddressesByCallsignsRouter = new Router({
+  matcher: (pathname) => pathname === '/address-query',
+  name: 'address-query',
+  onRootMatch: async (request, _response, ctx) => {
+    const callsigns = request.ourl.searchParams.get('callsign')?.split(',') ?? [];
+    ctx.data = await selectAddressesByCallsigns(callsigns);
   },
 });
 

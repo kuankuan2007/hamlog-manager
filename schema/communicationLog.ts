@@ -9,9 +9,9 @@ export interface CommunicationLog {
 	rxReport: number;
 	txReport: number;
 	summary?: string;
-	qslReceived: QSLReceive | null;
-	qslSent: QSLSend | null;
-	address?: Address;
+	hasAddress: boolean;
+	qslReceived: boolean;
+	qslSent: boolean;
 }
 
 export interface QSLSend {

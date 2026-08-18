@@ -26,8 +26,8 @@
           <td>{{ log.mode }}</td>
           <td>{{ log.rxReport }}</td>
           <td>{{ log.txReport }}</td>
-          <td>{{ log.qslReceived?.receivedAt ?? '-' }}</td>
-          <td>{{ log.qslSent?.sentAt ?? '-' }}</td>
+          <td>{{ log.qslReceived ? '是' : '-' }}</td>
+          <td>{{ log.qslSent ? '是' : '-' }}</td>
           <td>
             <button
               class="link-like"

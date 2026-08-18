@@ -55,6 +55,8 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 
 新增或更新指定呼号的最新地址。请求体为 JSON；呼号会转换为大写后保存。
 
+写入成功后，服务会将同呼号且尚未关联地址的通联日志关联到该地址；已有地址关联不会被覆盖。
+
 ```json
 {
   "callsign": "JA1ABC",
@@ -81,6 +83,8 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 
 新增一条 QSL 发件记录。新记录的收件确认时间固定为 `null`，不能通过此接口传入。
 
+写入成功后，服务会将同呼号且尚未关联 QSL 发件记录的通联日志关联到该记录；已有 QSL 发件关联不会被覆盖。
+
 ```json
 {
   "callsign": "JA1ABC",
@@ -100,6 +104,8 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 `POST /api/update/new-qsl-receive`
 
 新增一条 QSL 收件记录。
+
+写入成功后，服务会将同呼号且尚未关联 QSL 收件记录的通联日志关联到该记录；已有 QSL 收件关联不会被覆盖。
 
 ```json
 {
@@ -149,21 +155,9 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
   "rxReport": -10,
   "txReport": -8,
   "summary": "备注",
-  "qslReceived": {
-    "callsign": "JA1ABC",
-    "receivedAt": "2026-08-18"
-  },
-  "qslSent": {
-    "callsign": "JA1ABC",
-    "sentAt": "2026-08-17"
-  },
-  "address": {
-    "callsign": "JA1ABC",
-    "postalCode": "100-0001",
-    "address": "Tokyo, Japan",
-    "recipientName": "Taro Yamada",
-    "updatedAt": "2026-08-17"
-  }
+  "hasAddress": true,
+  "qslReceived": true,
+  "qslSent": true
 }
 ```
 
@@ -177,9 +171,9 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 | `rxReport` | number | 接收报告 |
 | `txReport` | number | 发送报告 |
 | `summary` | string，可选 | 通联摘要；未填写时字段不存在 |
-| `qslReceived` | QSLReceive 或 `null` | QSL 收件信息 |
-| `qslSent` | QSLSend 或 `null` | QSL 发件信息 |
-| `address` | Address，可选 | 对方地址；未关联时字段不存在 |
+| `hasAddress` | boolean | 关联的地址记录是否存在 |
+| `qslReceived` | boolean | 关联的 QSL 收件记录是否存在 |
+| `qslSent` | boolean | 关联的 QSL 发件记录是否存在 |
 
 ### Address
 
@@ -313,11 +307,17 @@ GET /api/auto/callsign2email?callsign=JA1ABC
 | --- | --- | --- | --- | --- |
 | `page` | number | 否 | `1` | 页码 |
 | `pageSize` | number | 否 | `100` | 每页记录数 |
+| `qslSent` | boolean | 否 | 不筛选 | `true` 仅保留已发出 QSL 的通联，`false` 仅保留未发出的通联 |
+| `qslReceived` | boolean | 否 | 不筛选 | `true` 仅保留已收到 QSL 的通联，`false` 仅保留未收到的通联 |
+| `hasAddress` | boolean | 否 | 不筛选 | `true` 仅保留有关联地址的通联，`false` 仅保留无关联地址的通联 |
+| `deduplicateCallsigns` | boolean | 否 | `false` | `true` 时每个呼号仅保留符合其他筛选条件的最新一条通联 |
 
 返回：分页 `CommunicationLog` 对象。
 
+该接口只查询 `communication_logs` 表；不会返回地址或 QSL 明细。`hasAddress`、`qslReceived` 和 `qslSent` 分别由 `address_id`、`qsl_receive_id` 与 `qsl_send_id` 是否为 `NULL` 得出。多个状态筛选以 AND 组合；启用 `deduplicateCallsigns` 时，先完成状态筛选，再按通联时间和记录序号倒序为每个呼号保留一条记录，最后分页。
+
 ```text
-GET /api/select/communication-log?page=1&pageSize=20
+GET /api/select/communication-log?page=1&pageSize=20&qslSent=false&qslReceived=false&hasAddress=true&deduplicateCallsigns=true
 ```
 
 ### 按呼号查询通联记录
@@ -331,6 +331,8 @@ GET /api/select/communication-log?page=1&pageSize=20
 | `callsign` | string | 是 | 对方呼号；应进行 URL 编码 |
 
 返回：`CommunicationLog[]`。
+
+该接口只查询 `communication_logs` 表；不会返回地址或 QSL 明细。`hasAddress`、`qslReceived` 和 `qslSent` 分别由 `address_id`、`qsl_receive_id` 与 `qsl_send_id` 是否为 `NULL` 得出。
 
 ```text
 GET /api/select/communication-log/JA1ABC
@@ -432,6 +434,22 @@ GET /api/select/address?page=1&pageSize=20
 GET /api/select/address/JA1ABC
 ```
 
+### 批量查询地址
+
+`GET /api/select/address-query`
+
+按逗号分隔的呼号批量查询地址。呼号会去除空项、去重并转换为大写；不存在地址的呼号不会出现在结果中。
+
+| 查询参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 以逗号分隔的呼号列表；应进行 URL 编码 |
+
+返回：`Address[]`，按呼号升序排列。未提供有效呼号时返回空数组。
+
+```text
+GET /api/select/address-query?callsign=JA1ABC,JA2DEF,JA3GHI
+```
+
 ## QSL 发件记录
 
 ### 查询全部 QSL 发件记录
@@ -462,6 +480,22 @@ GET /api/select/qsl-send
 GET /api/select/qsl-send/JA1ABC
 ```
 
+### 批量查询 QSL 发件记录
+
+`GET /api/select/qsl-send-query`
+
+按逗号分隔的呼号批量查询 QSL 发件记录。呼号会去除空项、去重并转换为大写；不存在发件记录的呼号不会出现在结果中。
+
+| 查询参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 以逗号分隔的呼号列表；应进行 URL 编码 |
+
+返回：`QSLSend[]`，按发件日期和记录序号倒序排列。未提供有效呼号时返回空数组。
+
+```text
+GET /api/select/qsl-send-query?callsign=JA1ABC,JA2DEF,JA3GHI
+```
+
 ## QSL 收件记录
 
 ### 查询全部 QSL 收件记录
@@ -490,4 +524,20 @@ GET /api/select/qsl-receive
 
 ```text
 GET /api/select/qsl-receive/JA1ABC
+```
+
+### 批量查询 QSL 收件记录
+
+`GET /api/select/qsl-receive-query`
+
+按逗号分隔的呼号批量查询 QSL 收件记录。呼号会去除空项、去重并转换为大写；不存在收件记录的呼号不会出现在结果中。
+
+| 查询参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 以逗号分隔的呼号列表；应进行 URL 编码 |
+
+返回：`QSLReceive[]`，按收件日期和记录序号倒序排列。未提供有效呼号时返回空数组。
+
+```text
+GET /api/select/qsl-receive-query?callsign=JA1ABC,JA2DEF,JA3GHI
 ```

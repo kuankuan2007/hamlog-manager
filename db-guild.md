@@ -63,6 +63,8 @@ erDiagram
 
 `communication_logs` 是通联记录主表。三条关联均为可选关系：删除被引用的地址或 QSL 记录时，关联列被置为 `NULL`；被引用主键更新时级联更新。
 
+新增或更新地址、QSL 发件记录、QSL 收件记录时，服务会在同一事务内回填同呼号且对应外键为 `NULL` 的通联记录；已有外键关联不会被新记录覆盖。
+
 | 子表字段 | 引用目标 | `ON DELETE` | `ON UPDATE` |
 | --- | --- | --- | --- |
 | `communication_logs.address_id` | `addresses.id` | `SET NULL` | `CASCADE` |
@@ -175,18 +177,15 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 
 ## 服务端读模型
 
-`server/database/select.ts` 是当前数据库访问层。它在 `communication_logs` 上通过三个 `LEFT JOIN` 组装 API 中的 `CommunicationLog`：未关联的地址字段被省略，未关联的 QSL 字段返回 `null`。数据库列名与 API 字段的主要映射如下。
+`server/database/select.ts` 是当前数据库访问层。通联日志列表与按呼号查询都只读取 `communication_logs`，不再联接地址或 QSL 表，也不返回地址或 QSL 明细。`address_id`、`qsl_send_id` 和 `qsl_receive_id` 分别映射为 `hasAddress`、`qslSent` 与 `qslReceived` 布尔值，非 `NULL` 时为 `true`。列表查询可按这三个外键状态筛选；按呼号去重时，在筛选结果中通过窗口函数按 `time DESC, id DESC` 保留每个呼号的最新记录。地址簿和 QSL 收发记录提供按呼号批量查询，输入呼号会规范化、去重后以参数化 `IN` 条件查询各自的单表。数据库列名与 API 字段的主要映射如下。
 
 | 数据库列 | API 字段 |
 | --- | --- |
 | `communication_logs.id` | `sequenceNumber` |
 | `rx_report` / `tx_report` | `rxReport` / `txReport` |
-| `addresses.postal_code` | `postalCode` |
-| `addresses.recipient_name` | `recipientName` |
-| `addresses.updated_at` | `updatedAt` |
-| `qsl_sends.sent_at` | `sentAt` |
-| `qsl_sends.confirmed_at` | `confirmedAt` |
-| `qsl_receives.received_at` | `receivedAt` |
+| `address_id IS NOT NULL` | `hasAddress` |
+| `qsl_send_id IS NOT NULL` | `qslSent` |
+| `qsl_receive_id IS NOT NULL` | `qslReceived` |
 
 按呼号查询前，服务会使用 `toUpperCase()` 规范化查询参数；写入数据时也应统一存储大写呼号，避免 SQLite 默认二进制文本比较产生大小写不匹配。通联列表按 `time DESC, id DESC` 排序，按呼号的通联列表也采用该顺序。为使文本排序等同于时间顺序，应持续使用零填充、从高到低排列的格式，例如 `YYYY-MM-DD HH:mm` 或 `YYYY-MM-DD HH:mm:ss`。
 

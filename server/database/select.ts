@@ -19,6 +19,13 @@ export interface CommunicationLogSearchResult {
 	logs: CommunicationLogSearchBasic[];
 }
 
+export interface CommunicationLogFilters {
+	qslSent?: boolean;
+	qslReceived?: boolean;
+	hasAddress?: boolean;
+	deduplicateCallsigns?: boolean;
+}
+
 interface CommunicationLogRow {
 	id: number;
 	time: string;
@@ -28,20 +35,12 @@ interface CommunicationLogRow {
 	rxReport: number;
 	txReport: number;
 	summary: string | null;
-	addressCallsign: string | null;
-	postalCode: string | null;
-	addressText: string | null;
-	recipientName: string | null;
-	updatedAt: string | null;
-	qslSendCallsign: string | null;
-	sentAt: string | null;
-	confirmedAt: string | null;
-	qslReceiveCallsign: string | null;
-	receivedAt: string | null;
+	addressId: number | null;
+	qslSendId: number | null;
+	qslReceiveId: number | null;
 }
 
-const communicationLogSelect = `
-	SELECT
+const communicationLogColumns = `
 		log.id,
 		log.time,
 		log.callsign,
@@ -50,20 +49,9 @@ const communicationLogSelect = `
 		log.rx_report AS rxReport,
 		log.tx_report AS txReport,
 		log.summary,
-		address.callsign AS addressCallsign,
-		address.postal_code AS postalCode,
-		address.address AS addressText,
-		address.recipient_name AS recipientName,
-		address.updated_at AS updatedAt,
-		qsl_send.callsign AS qslSendCallsign,
-		qsl_send.sent_at AS sentAt,
-		qsl_send.confirmed_at AS confirmedAt,
-		qsl_receive.callsign AS qslReceiveCallsign,
-		qsl_receive.received_at AS receivedAt
-	FROM communication_logs AS log
-	LEFT JOIN addresses AS address ON address.id = log.address_id
-	LEFT JOIN qsl_sends AS qsl_send ON qsl_send.id = log.qsl_send_id
-	LEFT JOIN qsl_receives AS qsl_receive ON qsl_receive.id = log.qsl_receive_id
+		log.address_id AS addressId,
+		log.qsl_send_id AS qslSendId,
+		log.qsl_receive_id AS qslReceiveId
 `;
 
 function getPagination(page: number, pageSize: number) {
@@ -77,27 +65,47 @@ function getPagination(page: number, pageSize: number) {
 	};
 }
 
-function toCommunicationLog(row: CommunicationLogRow): CommunicationLog {
-	const address: Address | undefined = row.addressCallsign === null
-		? undefined
-		: {
-				callsign: row.addressCallsign,
-				postalCode: row.postalCode ?? '',
-				address: row.addressText ?? '',
-				recipientName: row.recipientName ?? undefined,
-				updatedAt: row.updatedAt ?? '',
-			};
-	const qslSent: QSLSend | null = row.qslSendCallsign === null
-		? null
-		: {
-			callsign: row.qslSendCallsign,
-			sentAt: row.sentAt ?? '',
-			confirmedAt: row.confirmedAt,
-		};
-	const qslReceived: QSLReceive | null = row.qslReceiveCallsign === null
-		? null
-		: { callsign: row.qslReceiveCallsign, receivedAt: row.receivedAt ?? '' };
+function normalizeCallsigns(callsigns: string[]): string[] {
+	return [...new Set(callsigns.map(normalizeCallsign).filter(Boolean))];
+}
 
+function getCommunicationLogFilterConditions(filters: CommunicationLogFilters): string[] {
+	const conditions: string[] = [];
+	if (filters.qslSent !== undefined) {
+		conditions.push(`qsl_send_id IS ${filters.qslSent ? 'NOT ' : ''}NULL`);
+	}
+	if (filters.qslReceived !== undefined) {
+		conditions.push(`qsl_receive_id IS ${filters.qslReceived ? 'NOT ' : ''}NULL`);
+	}
+	if (filters.hasAddress !== undefined) {
+		conditions.push(`address_id IS ${filters.hasAddress ? 'NOT ' : ''}NULL`);
+	}
+	return conditions;
+}
+
+function getCommunicationLogFilterQuery(filters: CommunicationLogFilters): {
+	from: string;
+	where: string;
+} {
+	const filterConditions = getCommunicationLogFilterConditions(filters);
+	const filterWhere = filterConditions.length === 0 ? '' : ` WHERE ${filterConditions.join(' AND ')}`;
+	if (!filters.deduplicateCallsigns) {
+		return { from: 'communication_logs AS log', where: filterWhere };
+	}
+
+	return {
+		from: `(
+			SELECT *, ROW_NUMBER() OVER (
+				PARTITION BY callsign
+				ORDER BY time DESC, id DESC
+			) AS callsignRank
+			FROM communication_logs${filterWhere}
+		) AS log`,
+		where: ' WHERE log.callsignRank = 1',
+	};
+}
+
+function toCommunicationLog(row: CommunicationLogRow): CommunicationLog {
 	return {
 		sequenceNumber: row.id,
 		time: row.time,
@@ -107,24 +115,31 @@ function toCommunicationLog(row: CommunicationLogRow): CommunicationLog {
 		rxReport: row.rxReport,
 		txReport: row.txReport,
 		summary: row.summary ?? undefined,
-		qslReceived,
-		qslSent,
-		address,
+		hasAddress: row.addressId !== null,
+		qslReceived: row.qslReceiveId !== null,
+		qslSent: row.qslSendId !== null,
 	};
 }
 
 export async function selectCommunicationLogs(
 	page = 1,
-	pageSize = 100
+	pageSize = 100,
+	filters: CommunicationLogFilters = {}
 ): Promise<PaginatedResult<CommunicationLog>> {
 	await ready;
 	const pagination = getPagination(page, pageSize);
+	const filterQuery = getCommunicationLogFilterQuery(filters);
 	const [rows, count] = await Promise.all([
 		all<CommunicationLogRow>(
-			`${communicationLogSelect} ORDER BY log.time ASC, log.id DESC LIMIT ? OFFSET ?`,
+			`SELECT ${communicationLogColumns}
+			 FROM ${filterQuery.from}${filterQuery.where}
+			 ORDER BY log.time DESC, log.id DESC
+			 LIMIT ? OFFSET ?`,
 			[pagination.pageSize, pagination.offset]
 		),
-		get<{ total: number }>('SELECT COUNT(*) AS total FROM communication_logs'),
+		get<{ total: number }>(
+			`SELECT COUNT(*) AS total FROM ${filterQuery.from}${filterQuery.where}`
+		),
 	]);
 
 	return { ...pagination, items: rows.map(toCommunicationLog), total: count?.total ?? 0 };
@@ -196,7 +211,10 @@ export async function selectCommunicationLogsByCallsign(callsign: string): Promi
 	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	const rows = await all<CommunicationLogRow>(
-		`${communicationLogSelect} WHERE log.callsign = ? ORDER BY log.time DESC, log.id DESC`,
+		`SELECT ${communicationLogColumns}
+		 FROM communication_logs AS log
+		 WHERE log.callsign = ?
+		 ORDER BY log.time DESC, log.id DESC`,
 		[normalizedCallsign]
 	);
 	return rows.map(toCommunicationLog);
@@ -236,6 +254,21 @@ export async function selectAddressByCallsign(callsign: string): Promise<Address
 	return address ?? null;
 }
 
+export async function selectAddressesByCallsigns(callsigns: string[]): Promise<Address[]> {
+	await ready;
+	const normalizedCallsigns = normalizeCallsigns(callsigns);
+	if (normalizedCallsigns.length === 0) return [];
+
+	return all<Address>(
+		`SELECT callsign, postal_code AS postalCode, address,
+					recipient_name AS recipientName, updated_at AS updatedAt
+		 FROM addresses
+		 WHERE callsign IN (${normalizedCallsigns.map(() => '?').join(', ')})
+		 ORDER BY callsign ASC`,
+		normalizedCallsigns
+	);
+}
+
 export async function selectQSLReceives(): Promise<QSLReceive[]> {
 	await ready;
 	return all<QSLReceive>(
@@ -252,6 +285,20 @@ export async function selectQSLReceivesByCallsign(callsign: string): Promise<QSL
 		 WHERE callsign = ?
 		 ORDER BY received_at DESC, id DESC`,
 		[normalizedCallsign]
+	);
+}
+
+export async function selectQSLReceivesByCallsigns(callsigns: string[]): Promise<QSLReceive[]> {
+	await ready;
+	const normalizedCallsigns = normalizeCallsigns(callsigns);
+	if (normalizedCallsigns.length === 0) return [];
+
+	return all<QSLReceive>(
+		`SELECT callsign, received_at AS receivedAt
+		 FROM qsl_receives
+		 WHERE callsign IN (${normalizedCallsigns.map(() => '?').join(', ')})
+		 ORDER BY received_at DESC, id DESC`,
+		normalizedCallsigns
 	);
 }
 
@@ -273,5 +320,19 @@ export async function selectQSLSendsByCallsign(callsign: string): Promise<QSLSen
 		 WHERE callsign = ?
 		 ORDER BY sent_at DESC, id DESC`,
 		[normalizedCallsign]
+	);
+}
+
+export async function selectQSLSendsByCallsigns(callsigns: string[]): Promise<QSLSend[]> {
+	await ready;
+	const normalizedCallsigns = normalizeCallsigns(callsigns);
+	if (normalizedCallsigns.length === 0) return [];
+
+	return all<QSLSend>(
+		`SELECT callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
+		 FROM qsl_sends
+		 WHERE callsign IN (${normalizedCallsigns.map(() => '?').join(', ')})
+		 ORDER BY sent_at DESC, id DESC`,
+		normalizedCallsigns
 	);
 }

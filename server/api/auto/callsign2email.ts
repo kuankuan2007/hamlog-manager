@@ -1,23 +1,16 @@
-import Router from "@kuankuan/k-server";
-import { invalidInputStatue } from "@server/api/status";
-import { callsign2email } from "@server/auto/callsign2email";
+import Router from '@kuankuan/k-server';
+import { invalidInputStatue } from '@server/api/status';
+import { callsign2email } from '@server/auto/callsign2email';
 import {
   insertCallsignEmailCache,
   selectLatestCallsignEmailCache,
-} from "@server/database/callsign-email-cache";
-import { normalizeCallsign } from "@server/database";
-
-const callsign2EmailModes = ['auto', 'cache', 'fallback', 'realtime'] as const;
-type Callsign2EmailMode = typeof callsign2EmailModes[number];
-
-interface Callsign2EmailResponse {
-  callsign: string;
-  email: string | null;
-  comeFrom?: string;
-  realtime: boolean;
-  lastUpdate?: string;
-  mode: Callsign2EmailMode;
-}
+} from '@server/database/callsign-email-cache';
+import { normalizeCallsign } from '@server/database';
+import {
+  callsign2EmailModes,
+  type Callsign2EmailMode,
+  type Callsign2EmailResponse,
+} from '@server/schema';
 
 function isCallsign2EmailMode(value: string | null): value is Callsign2EmailMode {
   return value !== null && callsign2EmailModes.includes(value as Callsign2EmailMode);
@@ -99,5 +92,5 @@ export const Callsign2EmailRouter = new Router({
       }
     }
     ctx.data = { callsign: normalizedCallsign, email: null, realtime: true, mode };
-  }
+  },
 });

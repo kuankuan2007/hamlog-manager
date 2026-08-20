@@ -17,19 +17,12 @@ import {
 	validateCreateQSLReceiveInput,
 	validateCreateQSLSendInput,
 } from '../schema';
-import { get, normalizeCallsign, ready, run, runAndGetId } from './index';
-
-interface AddressRow extends Address {
-	id: number;
-}
-
-interface QSLSendRow extends QSLSend {
-	id: number;
-}
-
-interface QSLReceiveRow extends QSLReceive {
-	id: number;
-}
+import { normalizeCallsign, ready, run, runAndGetId } from './index';
+import {
+	findAddressByCallsign,
+	findLatestQSLReceiveByCallsign,
+	findLatestQSLSendByCallsign,
+} from './select';
 
 export class QSLSendNotFoundError extends Error {
 	constructor(callsign: string) {
@@ -83,38 +76,6 @@ export async function upsertAddress(input: CreateAddressInput): Promise<Address>
 	}
 
 	return normalizedInput;
-}
-
-function findAddressByCallsign(callsign: string): Promise<AddressRow | undefined> {
-	return get<AddressRow>(
-		`SELECT id, callsign, postal_code AS postalCode, address,
-				recipient_name AS recipientName, updated_at AS updatedAt
-		 FROM addresses
-		 WHERE callsign = ?`,
-		[callsign]
-	);
-}
-
-function findLatestQSLSendByCallsign(callsign: string): Promise<QSLSendRow | undefined> {
-	return get<QSLSendRow>(
-		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
-		 FROM qsl_sends
-		 WHERE callsign = ?
-		 ORDER BY sent_at DESC, id DESC
-		 LIMIT 1`,
-		[callsign]
-	);
-}
-
-function findLatestQSLReceiveByCallsign(callsign: string): Promise<QSLReceiveRow | undefined> {
-	return get<QSLReceiveRow>(
-		`SELECT id, callsign, received_at AS receivedAt
-		 FROM qsl_receives
-		 WHERE callsign = ?
-		 ORDER BY received_at DESC, id DESC
-		 LIMIT 1`,
-		[callsign]
-	);
 }
 
 export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend> {

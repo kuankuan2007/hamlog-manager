@@ -4,6 +4,7 @@ import {
   SelectAddressesByCallsignsRouter,
   SelectAddressesRouter,
 } from './address';
+import { SelectCallsignDetailRouter } from './callsignDetail';
 import {
 	SearchCommunicationLogBasicsRouter,
   SelectCommunicationLogBasicsByCallsignRouter,
@@ -30,6 +31,7 @@ SelectRouter.addRouter(SelectCommunicationLogsRouter);
 SelectRouter.addRouter(SelectCommunicationLogsByCallsignRouter);
 SelectRouter.addRouter(SelectCommunicationLogBasicsByCallsignRouter);
 SelectRouter.addRouter(SearchCommunicationLogBasicsRouter);
+SelectRouter.addRouter(SelectCallsignDetailRouter);
 SelectRouter.addRouter(SelectAddressesRouter);
 SelectRouter.addRouter(SelectAddressesByCallsignsRouter);
 SelectRouter.addRouter(SelectAddressByCallsignRouter);

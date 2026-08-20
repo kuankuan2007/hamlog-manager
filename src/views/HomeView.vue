@@ -1,5 +1,11 @@
 <template>
   <div class="box">
+    <div class="button-list">
+      <button @click="showCallsign = !showCallsign">
+        {{ showCallsign ? '隐藏呼号' : '显示呼号' }}
+      </button>
+      <a href="/new-log" target="_blank">新建日志</a>
+    </div>
     <table>
       <thead>
         <tr>
@@ -46,17 +52,14 @@
                 }
               "
             >
-              EN
-            </button>
+              EN</button
+            >|<a :href="`/callsign/${log.callsign}#log-seq-${log.sequenceNumber}`" target="_blank"
+              >详情</a
+            >
           </td>
         </tr>
       </tbody>
     </table>
-    <div class="button-list">
-      <button @click="showCallsign = !showCallsign">
-        {{ showCallsign ? '隐藏呼号' : '显示呼号' }}
-      </button>
-    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -83,42 +86,24 @@ selectCommunicationLogs()
 <style scoped lang="scss">
 .box {
   position: relative;
+  padding: 1em;
 }
-.box table {
-  border-collapse: collapse;
-  font-family:
-    Fira Code,
-    'Alibaba PuHuiTi 3.0',
-    sans-serif;
-  th {
-    text-align: center;
-    font-weight: bold;
-  }
-  td {
-    text-align: right;
-  }
-  th,
-  td {
-    padding: 0.2em 0.5em;
-    border: 1px solid;
-    @include theme.use {
-      border-color: rgba(theme.get('color'), 50%);
-    }
-    border-collapse: collapse;
-  }
-  button.link-like {
-    background: none;
-    border: none;
-    outline: none;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
-    @include theme.use {
-      color: theme.mix('color', 'active-color', 50%);
-    }
-  }
-}
+
 .button-list {
   padding: 0.5em;
+  a,
+  button {
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+    border: 1px solid;
+    background-color: transparent;
+    margin-left: 0.5em;
+    text-decoration: none;
+    font-size: 1em;
+    @include theme.use {
+      color: theme.mix('color', 'active-color', 50%);
+      border-color: theme.mix('color', 'active-color', 50%);
+    }
+  }
 }
 </style>

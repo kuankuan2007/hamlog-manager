@@ -9,7 +9,7 @@ const router = createRouter({
       name: 'home',
       component: () => import('@/views/HomeView.vue'),
       meta: {
-        title: 'Home',
+        title: '首页',
         fullscreen: true,
         hideHeader: true,
       },
@@ -19,7 +19,7 @@ const router = createRouter({
       name: '404',
       component: PageNotFoundView,
       meta: {
-        title: 'Not Found',
+        title: '404',
       },
     },
     {
@@ -27,7 +27,24 @@ const router = createRouter({
       name: 'address-print',
       component: () => import('@/views/AddressPrint.vue'),
       meta: {
-        title: 'Address Print',
+        title: '地址打印',
+      },
+    },
+    {
+      path: '/callsign/:callsign',
+      name: 'callsign-detail',
+      component: () => import('@/views/CallsignDetail.vue'),
+      meta: {
+        title: '呼号详情',
+      },
+      props: true,
+    },
+    {
+      path: '/new-log',
+      name: 'new-log',
+      component: () => import('@/views/NewLog.vue'),
+      meta: {
+        title: '新增通联记录',
       },
     }
   ],

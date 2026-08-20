@@ -295,6 +295,52 @@ GET /api/auto/callsign2email?callsign=JA1ABC
 }
 ```
 
+## 呼号详情
+
+### 查询呼号完整信息
+
+`GET /api/select/callsign-detail`
+
+按呼号聚合基本信息、全部通联记录、地址信息以及全部 QSL 收发记录。呼号查询不区分大小写。
+
+| 查询参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `callsign` | string | 是 | 要查询的对方呼号；应进行 URL 编码 |
+
+返回对象格式如下：
+
+```json
+{
+  "basic": {
+    "callsign": "JA1ABC",
+    "communicationCount": 2,
+    "firstCommunicationAt": "2026-08-10 09:30",
+    "lastCommunicationAt": "2026-08-17 12:34"
+  },
+  "communicationLogs": [],
+  "addresses": [],
+  "qslSends": [],
+  "qslReceives": []
+}
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `basic.callsign` | string | 规范化为大写后的查询呼号 |
+| `basic.communicationCount` | number | 该呼号的通联记录总数 |
+| `basic.firstCommunicationAt` | string 或 `null` | 最早通联时间；没有通联记录时为 `null` |
+| `basic.lastCommunicationAt` | string 或 `null` | 最近通联时间；没有通联记录时为 `null` |
+| `communicationLogs` | `CommunicationLog[]` | 全部通联记录，按通联时间和记录序号倒序 |
+| `addresses` | `Address[]` | 全部地址信息；没有地址时为空数组。当前数据库以呼号唯一约束地址，因此最多一条 |
+| `qslSends` | `QSLSend[]` | 全部 QSL 发件记录，按发件日期和记录序号倒序 |
+| `qslReceives` | `QSLReceive[]` | 全部 QSL 收件记录，按收件日期和记录序号倒序 |
+
+呼号在数据库中没有任何相关信息时，接口仍返回规范化后的 `basic.callsign`，其余计数、时间和数组为空值。未提供 `callsign` 或参数仅包含空白时，响应状态为 `10001`，消息为 `callsign is required`。
+
+```text
+GET /api/select/callsign-detail?callsign=JA1ABC
+```
+
 ## 通联记录
 
 ### 查询通联记录列表

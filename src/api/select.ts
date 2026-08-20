@@ -1,6 +1,8 @@
 import type { Address } from '@schema/address';
-import type { CommunicationLog } from '@schema/communicationLog';
+import type { CallsignDetail, CommunicationLog } from '@schema/communicationLog';
 import type { PaginatedResult, ServerResponse } from '@schema/utils';
+
+export type { CallsignDetail } from '@schema/communicationLog';
 
 export interface CommunicationLogFilters {
   qslSent?: boolean;
@@ -47,5 +49,12 @@ export async function selectAddressesByCallsigns(callsigns: string[]): Promise<A
   const params = new URLSearchParams({ callsign: callsigns.join(',') });
   return await getData<Address[]>(
     fetch(`/api/select/address-query?${params.toString()}`)
+  );
+}
+
+export async function selectCallsignDetail(callsign: string): Promise<CallsignDetail> {
+  const params = new URLSearchParams({ callsign });
+  return await getData<CallsignDetail>(
+    fetch(`/api/select/callsign-detail?${params.toString()}`)
   );
 }

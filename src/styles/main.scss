@@ -6,6 +6,49 @@ body {
     background: theme.get('background');
     color: theme.get('color');
   }
+  table {
+    border-collapse: collapse;
+    font-family:
+      Fira Code,
+      'Alibaba PuHuiTi 3.0',
+      sans-serif;
+    th {
+      text-align: center;
+      font-weight: bold;
+    }
+    td {
+      text-align: right;
+    }
+    th,
+    td {
+      padding: 0.2em 0.5em;
+      border: 1px solid;
+      @include theme.use {
+        border-color: rgba(theme.get('color'), 50%);
+      }
+      border-collapse: collapse;
+    }
+    button.link-like {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      @include theme.use {
+        color: theme.mix('color', 'active-color', 50%);
+      }
+    }
+    a{
+      padding: 0;
+      margin: 0;
+      padding: 0;
+      text-decoration: none;
+      cursor: pointer;
+      @include theme.use {
+        color: theme.mix('color', 'active-color', 50%);
+      }
+    }
+  }
 }
 a {
   @include theme.use {

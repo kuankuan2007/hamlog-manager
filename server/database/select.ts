@@ -1,6 +1,6 @@
 import { all, get, normalizeCallsign, ready } from './index';
 import type { Address } from '../../schema/address';
-import type { CommunicationLog, QSLReceive, QSLSend } from '../../schema/communicationLog';
+import type { CallsignDetail, CommunicationLog, QSLReceive, QSLSend } from '../../schema/communicationLog';
 import type { PaginatedResult } from '@schema/utils';
 export interface CommunicationLogBasic {
 	date: string;
@@ -24,6 +24,18 @@ export interface CommunicationLogFilters {
 	qslReceived?: boolean;
 	hasAddress?: boolean;
 	deduplicateCallsigns?: boolean;
+}
+
+export interface AddressRow extends Address {
+	id: number;
+}
+
+export interface QSLSendRow extends QSLSend {
+	id: number;
+}
+
+export interface QSLReceiveRow extends QSLReceive {
+	id: number;
 }
 
 interface CommunicationLogRow {
@@ -67,6 +79,38 @@ function getPagination(page: number, pageSize: number) {
 
 function normalizeCallsigns(callsigns: string[]): string[] {
 	return [...new Set(callsigns.map(normalizeCallsign).filter(Boolean))];
+}
+
+export function findAddressByCallsign(callsign: string): Promise<AddressRow | undefined> {
+	return get<AddressRow>(
+		`SELECT id, callsign, postal_code AS postalCode, address,
+				recipient_name AS recipientName, updated_at AS updatedAt
+		 FROM addresses
+		 WHERE callsign = ?`,
+		[callsign]
+	);
+}
+
+export function findLatestQSLSendByCallsign(callsign: string): Promise<QSLSendRow | undefined> {
+	return get<QSLSendRow>(
+		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
+		 FROM qsl_sends
+		 WHERE callsign = ?
+		 ORDER BY sent_at DESC, id DESC
+		 LIMIT 1`,
+		[callsign]
+	);
+}
+
+export function findLatestQSLReceiveByCallsign(callsign: string): Promise<QSLReceiveRow | undefined> {
+	return get<QSLReceiveRow>(
+		`SELECT id, callsign, received_at AS receivedAt
+		 FROM qsl_receives
+		 WHERE callsign = ?
+		 ORDER BY received_at DESC, id DESC
+		 LIMIT 1`,
+		[callsign]
+	);
 }
 
 function getCommunicationLogFilterConditions(filters: CommunicationLogFilters): string[] {
@@ -335,4 +379,27 @@ export async function selectQSLSendsByCallsigns(callsigns: string[]): Promise<QS
 		 ORDER BY sent_at DESC, id DESC`,
 		normalizedCallsigns
 	);
+}
+
+export async function selectCallsignDetail(callsign: string): Promise<CallsignDetail> {
+	const normalizedCallsign = normalizeCallsign(callsign);
+	const [communicationLogs, addresses, qslSends, qslReceives] = await Promise.all([
+		selectCommunicationLogsByCallsign(normalizedCallsign),
+		selectAddressesByCallsigns([normalizedCallsign]),
+		selectQSLSendsByCallsign(normalizedCallsign),
+		selectQSLReceivesByCallsign(normalizedCallsign),
+	]);
+
+	return {
+		basic: {
+			callsign: normalizedCallsign,
+			communicationCount: communicationLogs.length,
+			firstCommunicationAt: communicationLogs.at(-1)?.time ?? null,
+			lastCommunicationAt: communicationLogs[0]?.time ?? null,
+		},
+		communicationLogs,
+		addresses,
+		qslSends,
+		qslReceives,
+	};
 }

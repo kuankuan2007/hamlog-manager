@@ -2,7 +2,9 @@
   <div class="box">
     <h1>{{ callsign.toUpperCase() }}</h1>
     <div class="email">
-      <span v-if="emailInfo?.email"><a :href="'mailto:' + emailInfo.email">{{ emailInfo.email }}</a></span>
+      <span v-if="emailInfo?.email"
+        ><a :href="'mailto:' + emailInfo.email">{{ emailInfo.email }}</a></span
+      >
       <span v-else>无数据</span>
       <span class="email-tag">{{
         emailInfo?.realtime ? '实时' : emailInfo?.lastUpdate ? emailInfo.lastUpdate : '非实时'
@@ -176,7 +178,7 @@ async function getDetails(callsign: string) {
 }
 const emailError = ref<string | null>(null);
 const emailLoading = ref(false);
-function getEmail(callsign: string, realtime: boolean=false) {
+function getEmail(callsign: string, realtime: boolean = false) {
   emailLoading.value = true;
   callsign2email(callsign, realtime ? 'fallback' : 'cache')
     .then((res) => {
@@ -213,7 +215,8 @@ watch(
 .box {
   padding: 1em;
 }
-.email-tag, .email-refresh-button {
+.email-tag,
+.email-refresh-button {
   margin-left: 0.5em;
   padding: 0.2em 0.5em;
   border-radius: 4px;
@@ -224,7 +227,7 @@ watch(
     border-color: theme.mix('color', 'background', 50%);
   }
 }
-.email-refresh-button{
+.email-refresh-button {
   cursor: pointer;
 }
 </style>

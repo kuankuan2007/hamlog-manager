@@ -19,7 +19,7 @@ export async function sendData<T>(url: string, data: T) {
     method: 'POST',
     body: JSON.stringify(data),
   });
-    if (!_response.ok) {
+  if (!_response.ok) {
     throw new Error(errorMessageFromResponse(_response.status, _response.statusText));
   }
   const body = (await _response.json()) as ServerResponse<T>;

@@ -39,7 +39,11 @@
           <td>{{ log.qslReceived ? '是' : '-' }}</td>
           <td>{{ log.qslSent ? '是' : '-' }}</td>
           <td>
-            <a :href="`/callsign/${log.callsign}#log-id-${log.id}`" target="_blank">详情</a>|<a :href="`/new-log?callsign=${log.callsign}`" target="_blank">新建</a>
+            <a :href="`/callsign/${log.callsign}#log-id-${log.id}`" target="_blank">详情</a>|<a
+              :href="`/new-log?callsign=${log.callsign}`"
+              target="_blank"
+              >新建</a
+            >
           </td>
           <td>
             <button
@@ -59,8 +63,8 @@
                 }
               "
             >
-              EN</button
-            >
+              EN
+            </button>
           </td>
         </tr>
       </tbody>

@@ -1,5 +1,5 @@
 <template>
-  <input v-model="inputValue" type="number"/>
+  <input v-model="inputValue" type="number" />
 </template>
 <script setup lang="ts">
 const modelValue = defineModel<number>('modelValue', { default: 59 });

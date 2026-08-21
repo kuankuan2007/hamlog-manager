@@ -1,16 +1,21 @@
 <template>
   <div class="box">
     <h1>呼号搜索</h1>
-    <input type="text" v-model="searchContent" placeholder="输入呼号进行搜索" /> <a :href="`/new-log?callsign=${searchContent}`" class="new-log-button" target="_blank">新增通联记录</a>
+    <input type="text" v-model="searchContent" placeholder="输入呼号进行搜索" />
+    <a :href="`/new-log?callsign=${searchContent}`" class="new-log-button" target="_blank"
+      >新增通联记录</a
+    >
     <div class="result-box">
       <h2>搜索结果</h2>
       <ul class="result-list" v-if="searchResult.length > 0">
         <li v-for="item in searchResult" :key="item.callsign">
           <h3 class="callsign-data">{{ item.callsign }}</h3>
           <p>
-                    <a :href="`/callsign/${item.callsign}`" class="detail-button" target="_blank">详情</a>
-          <a :href="`/new-log?callsign=${item.callsign}`" class="new-log-button" target="_blank">新增通联记录</a>
-</p>
+            <a :href="`/callsign/${item.callsign}`" class="detail-button" target="_blank">详情</a>
+            <a :href="`/new-log?callsign=${item.callsign}`" class="new-log-button" target="_blank"
+              >新增通联记录</a
+            >
+          </p>
           <table>
             <thead>
               <tr>
@@ -41,7 +46,6 @@ import getShowText from '@/scripts/showText';
 const searchContent = ref('');
 const searchResult = ref<CommunicationLogSearchResult[]>([]);
 
-
 function getTextNodes(root: Node): Text[] {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
@@ -63,10 +67,12 @@ function getTextNodes(root: Node): Text[] {
 }
 function highlightCallsign(query: string) {
   CSS.highlights.clear();
-  if(!query) return;
+  if (!query) return;
   const eles = document.querySelectorAll('.callsign-data');
 
-  const textNodes: Text[] = Array.from(eles).map(item => getTextNodes(item)).flat();
+  const textNodes: Text[] = Array.from(eles)
+    .map((item) => getTextNodes(item))
+    .flat();
   const value = query.toUpperCase();
   const ranges: Range[] = [];
   for (const i of textNodes) {
@@ -79,12 +85,14 @@ function highlightCallsign(query: string) {
       indices.push(index);
       now = index + value.length;
     }
-    ranges.push(...indices.map(index => {
-      const range = document.createRange();
-      range.setStart(i, index);
-      range.setEnd(i, index + value.length);
-      return range;
-    }));
+    ranges.push(
+      ...indices.map((index) => {
+        const range = document.createRange();
+        range.setStart(i, index);
+        range.setEnd(i, index + value.length);
+        return range;
+      })
+    );
   }
   CSS.highlights.set('search-results', new Highlight(...ranges));
 }
@@ -93,12 +101,12 @@ let abortController: AbortController | null = null;
 
 function updateSearchResult(query: string) {
   abortController?.abort();
-    abortController = new AbortController();
-    searchCallsign(query, abortController).then((res) => {
-      if(searchContent.value === query) {
-        searchResult.value = res;
-      }
-    });
+  abortController = new AbortController();
+  searchCallsign(query, abortController).then((res) => {
+    if (searchContent.value === query) {
+      searchResult.value = res;
+    }
+  });
 }
 watch(searchContent, async (newVal) => {
   if (newVal) {
@@ -113,11 +121,11 @@ onUpdated(() => {
 });
 </script>
 <style scoped lang="scss">
-.box{
+.box {
   padding: 1em;
-  a{
+  a {
     text-decoration: none;
-    border:  1px solid;
+    border: 1px solid;
     padding: 0.1em 0.5em;
     margin-left: 0.5em;
     border-radius: 0.3em;
@@ -128,7 +136,7 @@ onUpdated(() => {
     }
   }
 }
-.result-list{
+.result-list {
   list-style: none;
   padding: 0;
   margin: 0;

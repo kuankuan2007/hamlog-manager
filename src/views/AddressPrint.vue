@@ -32,7 +32,8 @@ async function loadPrintData(): Promise<void> {
       selectCommunicationLogs(index + 2, pageSize, filters)
     )
   );
-  const callsigns = firstPage.items.concat(...remainingPages.map((page) => page.items))
+  const callsigns = firstPage.items
+    .concat(...remainingPages.map((page) => page.items))
     .map((log) => log.callsign);
   printData.value = await selectAddressesByCallsigns(callsigns);
 }

@@ -13,5 +13,4 @@
 <script setup lang="ts">
 import { title, fullscreen, hideHeader } from './router';
 </script>
-<style scoped lang="scss">
-</style>
+<style scoped lang="scss"></style>

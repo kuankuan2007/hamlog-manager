@@ -1,8 +1,6 @@
-<template>
-  <input type="number" v-model="inputValue" step="0.001"/> MHZ
-</template>
+<template><input type="number" v-model="inputValue" step="0.001" /> MHZ</template>
 <script setup lang="ts">
-const modelValue = defineModel<number>('modelValue', { default: 145.670 });
+const modelValue = defineModel<number>('modelValue', { default: 145.67 });
 const inputValue = computed({
   get: () => modelValue.value,
   set: (value: number) => {
@@ -10,7 +8,7 @@ const inputValue = computed({
       try {
         value = Number(value);
       } catch {
-        value = 145.670;
+        value = 145.67;
       }
     }
     modelValue.value = value;

@@ -19,7 +19,6 @@ const showText: Record<string, string> = {
   time: '时间',
 };
 
-
 function getShowText(key: string): string {
   return showText[key] ?? key;
 }

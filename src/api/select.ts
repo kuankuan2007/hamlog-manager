@@ -1,5 +1,9 @@
 import type { Address } from '@schema/address';
-import type { CallsignDetail, CommunicationLog, CommunicationLogSearchResult } from '@schema/communicationLog';
+import type {
+  CallsignDetail,
+  CommunicationLog,
+  CommunicationLogSearchResult,
+} from '@schema/communicationLog';
 import type { PaginatedResult, ServerResponse } from '@schema/utils';
 
 export type { CallsignDetail } from '@schema/communicationLog';
@@ -47,18 +51,17 @@ export async function selectAddressesByCallsigns(callsigns: string[]): Promise<A
   if (callsigns.length === 0) return [];
 
   const params = new URLSearchParams({ callsign: callsigns.join(',') });
-  return await getData<Address[]>(
-    fetch(`/api/select/address-query?${params.toString()}`)
-  );
+  return await getData<Address[]>(fetch(`/api/select/address-query?${params.toString()}`));
 }
 
 export async function selectCallsignDetail(callsign: string): Promise<CallsignDetail> {
   const params = new URLSearchParams({ callsign });
-  return await getData<CallsignDetail>(
-    fetch(`/api/select/callsign-detail?${params.toString()}`)
-  );
+  return await getData<CallsignDetail>(fetch(`/api/select/callsign-detail?${params.toString()}`));
 }
-export async function searchCallsign(query: string, abortController?: AbortController): Promise<CommunicationLogSearchResult[]> {
+export async function searchCallsign(
+  query: string,
+  abortController?: AbortController
+): Promise<CommunicationLogSearchResult[]> {
   const params = new URLSearchParams({ query });
   return await getData<CommunicationLogSearchResult[]>(
     fetch(`/api/select/search-log?${params.toString()}`, { signal: abortController?.signal })

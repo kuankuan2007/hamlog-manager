@@ -7,10 +7,7 @@
       <p>
         <k-input-time v-model="time" />
       </p>
-      <p>
-        FREQ: <k-input-freq v-model="freq" />
-        MODE: <k-input-mode v-model="mode" />
-      </p>
+      <p>FREQ: <k-input-freq v-model="freq" /> MODE: <k-input-mode v-model="mode" /></p>
       <p>摘要：<input type="text" name="summary" v-model="summary" /></p>
       <p><button type="submit">提交</button></p>
     </form>
@@ -25,8 +22,11 @@ import { getCurrentTimeTagString } from '@util/time';
 import type { RadioMode } from '@/types/data';
 import { type CreateCommunicationLogInput, newCommunicationLog } from '@/api/update';
 
+const props = defineProps<{
+  callsign?: string;
+}>();
 
-const callsign = ref('');
+const callsign = ref(props.callsign ?? '');
 const time = ref(getCurrentTimeTagString());
 const rxReport = ref(59);
 const txReport = ref(59);
@@ -44,14 +44,17 @@ const submitForm = () => {
     frequency: freq.value,
     mode: mode.value,
   };
-  newCommunicationLog(options).then(() => {
-    alert('提交成功');
-  }).catch((err) => {
-    alert(`提交失败: ${err}`);
-  });
+  newCommunicationLog(options)
+    .then(() => {
+      alert('提交成功');
+    })
+    .catch((err) => {
+      alert(`提交失败: ${err}`);
+    });
 };
 </script>
 <style scoped lang="scss">
-.box{
+.box {
   padding: 1em;
-}</style>
+}
+</style>

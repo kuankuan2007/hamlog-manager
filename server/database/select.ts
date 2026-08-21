@@ -1,23 +1,7 @@
 import { all, get, normalizeCallsign, ready } from './index';
-import type { Address } from '../../schema/address';
-import type { CallsignDetail, CommunicationLog, QSLReceive, QSLSend } from '../../schema/communicationLog';
+import type { Address } from '@schema/address';
+import type { CallsignDetail, CommunicationLog, QSLReceive, QSLSend, CommunicationLogBasic, CommunicationLogSearchBasic, CommunicationLogSearchResult } from '@schema/communicationLog';
 import type { PaginatedResult } from '@schema/utils';
-export interface CommunicationLogBasic {
-	date: string;
-	callsign: string;
-	frequency: number;
-}
-
-export interface CommunicationLogSearchBasic {
-	callsign: string;
-	time: string;
-	frequency: number;
-}
-
-export interface CommunicationLogSearchResult {
-	callsign: string;
-	logs: CommunicationLogSearchBasic[];
-}
 
 export interface CommunicationLogFilters {
 	qslSent?: boolean;
@@ -223,12 +207,14 @@ export async function searchCommunicationLogBasics(
 				WHEN substr(callsign, 1, length(?)) = ? THEN 2
 				WHEN substr(callsign, -length(?)) = ? THEN 3
 				WHEN length(?) <= 3 AND substr(callsign, -3, length(?)) = ? THEN 4
-				ELSE 5
+				WHEN instr(callsign, ?) > 0 THEN 5
+				ELSE 6
 			END,
 			callsign ASC,
 			time DESC,
 			id DESC`,
 		[
+			normalizedQuery,
 			normalizedQuery,
 			normalizedQuery,
 			normalizedQuery,

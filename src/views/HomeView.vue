@@ -5,6 +5,7 @@
         {{ showCallsign ? '隐藏呼号' : '显示呼号' }}
       </button>
       <a href="/new-log" target="_blank">新建日志</a>
+      <a href="/callsign-search" target="_blank">呼号搜索</a>
     </div>
     <table>
       <thead>
@@ -16,6 +17,7 @@
           <th rowspan="2">Mode</th>
           <th colspan="2">RST</th>
           <th colspan="2">QSL</th>
+          <th rowspan="2">操作</th>
           <th rowspan="2">复制</th>
         </tr>
         <tr>
@@ -37,6 +39,9 @@
           <td>{{ log.qslReceived ? '是' : '-' }}</td>
           <td>{{ log.qslSent ? '是' : '-' }}</td>
           <td>
+            <a :href="`/callsign/${log.callsign}#log-id-${log.id}`" target="_blank">详情</a>|<a :href="`/new-log?callsign=${log.callsign}`" target="_blank">新建</a>
+          </td>
+          <td>
             <button
               class="link-like"
               @click="
@@ -55,8 +60,6 @@
               "
             >
               EN</button
-            >|<a :href="`/callsign/${log.callsign}#log-id-${log.id}`" target="_blank"
-              >详情</a
             >
           </td>
         </tr>

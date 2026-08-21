@@ -418,7 +418,7 @@ GET /api/select/communication-log/JA1ABC/basic
 
 ### 模糊查询通联摘要
 
-`GET /api/select/communication-log/search/{query}`
+`GET /api/select/search-log?query=1ABCD`
 
 按输入字符串模糊匹配呼号，并按呼号聚合返回通联时间和频率。匹配及呼号排序优先级依次为：精确匹配、从呼号头部开始匹配、从呼号尾部开始匹配、从倒数第 3 位开始匹配（仅输入长度不超过 3 时）、其他中间匹配。呼号查询不区分大小写。
 
@@ -444,7 +444,7 @@ GET /api/select/communication-log/JA1ABC/basic
 ```
 
 ```text
-GET /api/select/communication-log/search/1AB
+GET /api/select/search-log?query=1ABCD
 ```
 
 ## 地址簿

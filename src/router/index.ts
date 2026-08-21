@@ -40,13 +40,30 @@ const router = createRouter({
       props: true,
     },
     {
+      path: '/callsign-search',
+      name: 'callsign-search',
+      component: () => import('@/views/CallsignSearch.vue'),
+      meta: {
+        title: '呼号搜索',
+      },
+      props: true,
+    },
+    {
       path: '/new-log',
       name: 'new-log',
       component: () => import('@/views/NewLog.vue'),
+      props: (route) => ({
+        callsign:
+          typeof route.query.callsign === 'string'
+            ? route.query.callsign
+            : Array.isArray(route.query.callsign)
+              ? route.query.callsign[0]
+              : undefined,
+      }),
       meta: {
         title: '新增通联记录',
       },
-    }
+    },
   ],
 });
 

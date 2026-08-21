@@ -38,7 +38,7 @@ body {
         color: theme.mix('color', 'active-color', 50%);
       }
     }
-    a{
+    a {
       padding: 0;
       margin: 0;
       padding: 0;
@@ -53,5 +53,27 @@ body {
 a {
   @include theme.use {
     color: theme.get('active-color');
+  }
+}
+input,
+select,
+textarea {
+  font-size: 1.2em;
+  padding: 0.2em 0.5em;
+  border: 1px solid;
+  border-radius: 0.2em;
+  outline: none;
+  @include theme.use {
+    color: theme.get('color');
+    background: theme.get('background');
+    border-color: theme.mix('color', 'background', 50%);
+  }
+  &:focus,
+  &:active {
+    outline: 1px solid;
+    @include theme.use {
+      outline-color: theme.get('active-color');
+      border-color: theme.get('active-color');
+    }
   }
 }

@@ -168,3 +168,19 @@ export const ConfirmQSLSendInputSchema = {
   },
   required: ['callsign', 'confirmedAt'],
 };
+export interface CommunicationLogBasic {
+	date: string;
+	callsign: string;
+	frequency: number;
+}
+
+export interface CommunicationLogSearchBasic {
+	callsign: string;
+	time: string;
+	frequency: number;
+}
+
+export interface CommunicationLogSearchResult {
+	callsign: string;
+	logs: CommunicationLogSearchBasic[];
+}

@@ -1,6 +1,6 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "schema/**/*"],
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "schema/**/*", "util/**/*"],
   "exclude": ["src/**/__tests__/*"],
 
   "compilerOptions": {
@@ -11,7 +11,8 @@
     "rootDir": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@schema/*": ["./schema/*"]
+      "@schema/*": ["./schema/*"],
+      "@util/*": ["./util/*"]
     }
   }
 }

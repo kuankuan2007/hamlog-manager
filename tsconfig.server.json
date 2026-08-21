@@ -1,6 +1,6 @@
 {
   "extends": "@tsconfig/node24/tsconfig.json",
-  "include": ["server/**/*", "schema/**/*", "src/types/**/*"],
+  "include": ["server/**/*", "schema/**/*", "util/**/*", "src/types/**/*"],
   "compilerOptions": {
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
@@ -13,7 +13,8 @@
     "rootDir": ".",
     "paths": {
       "@server/*": ["./server/*"],
-      "@schema/*": ["./schema/*"]
+      "@schema/*": ["./schema/*"],
+      "@util/*": ["./util/*"]
     }
   }
 }

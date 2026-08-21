@@ -1,6 +1,7 @@
 import type { Address } from './address';
 
 export interface CommunicationLog {
+  id: number;
   sequenceNumber: number;
   time: string;
   callsign: string;

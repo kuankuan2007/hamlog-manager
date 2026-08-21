@@ -14,7 +14,7 @@ import {
   datetimeLocalValueToPlainDateTime,
   plainDateTimeToDatetimeLocalValue,
   getCurrentTimeTagString
-} from '@/scripts/time';
+} from '@util/time';
 import KInputTimezoneRaw from './KInputTimezone.vue';
 
 const modelValue = defineModel<string>('modelValue', { default: () => getCurrentTimeTagString() });

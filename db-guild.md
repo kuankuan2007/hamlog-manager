@@ -10,7 +10,7 @@
 | 编码 | UTF-8 |
 | 页大小 | 4096 字节 |
 | 日志模式 | WAL |
-| `user_version` | 2 |
+| `user_version` | 3 |
 | 业务表 | `communication_logs`、`addresses`、`qsl_sends`、`qsl_receives`、`callsign_email_cache` |
 | 视图 / 触发器 | 无 / 无 |
 | 自动增长状态 | 五张业务表均以 `INTEGER PRIMARY KEY AUTOINCREMENT` 生成主键 |
@@ -35,6 +35,7 @@ erDiagram
     }
     COMMUNICATION_LOGS {
         INTEGER id PK
+        INTEGER sequence_number UK
         TEXT time
         TEXT callsign
         REAL frequency
@@ -92,7 +93,8 @@ erDiagram
 
 | 字段 | SQLite 类型 | 可空 | 约束 | 说明 |
 | --- | --- | --- | --- | --- |
-| `id` | `INTEGER` | 否 | PK，AUTOINCREMENT | 通联记录序号；API 映射为 `sequenceNumber` |
+| `id` | `INTEGER` | 否 | PK，AUTOINCREMENT | 稳定标识；API 暴露为 `id`，但详情页不显示 |
+| `sequence_number` | `INTEGER` | 否 | UNIQUE | 按 `time ASC, id ASC` 排列的持久化全局序号；补录时自动顺延后续记录 |
 | `time` | `TEXT` | 否 | 无 | 通联时间；服务按其文本值排序 |
 | `callsign` | `TEXT` | 否 | 无 | 对方呼号 |
 | `frequency` | `REAL` | 否 | 无 | 通联频率 |
@@ -141,13 +143,15 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 
 ## 索引
 
-除 `addresses.callsign` 的唯一约束自动生成的索引外，数据库有 10 个显式索引。全部为非唯一、非部分索引。
+除 `addresses.callsign` 的唯一约束自动生成的索引外，数据库有 12 个显式索引。其中 `idx_communication_logs_sequence_number` 为唯一索引，其余为非唯一索引；全部为非部分索引。
 
 | 表 | 索引 | 字段顺序 | 用途 / 备注 |
 | --- | --- | --- | --- |
 | `addresses` | `sqlite_autoindex_addresses_1` | `callsign` | UNIQUE 约束自动创建，负责唯一性和按呼号查询 |
 | `addresses` | `idx_addresses_callsign` | `callsign` | 与上述唯一索引键列相同 |
 | `communication_logs` | `idx_communication_logs_time` | `time` | 全部通联记录按时间排序 |
+| `communication_logs` | `idx_communication_logs_time_id` | `time DESC`, `id DESC` | 通联列表按时间和内部标识倒序分页 |
+| `communication_logs` | `idx_communication_logs_sequence_number` | `sequence_number` | 保证时间顺序号唯一并支持按序号查询 |
 | `communication_logs` | `idx_communication_logs_callsign` | `callsign` | 按呼号筛选 |
 | `communication_logs` | `idx_communication_logs_callsign_time_id` | `callsign`, `time`, `id` | 按呼号、时间和序号排序 |
 | `communication_logs` | `idx_communication_logs_callsign_time_frequency` | `callsign`, `time`, `frequency` | 服务启动时以 `CREATE INDEX IF NOT EXISTS` 确保存在 |
@@ -181,7 +185,8 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 
 | 数据库列 | API 字段 |
 | --- | --- |
-| `communication_logs.id` | `sequenceNumber` |
+| `communication_logs.id` | `id` |
+| `communication_logs.sequence_number` | `sequenceNumber` |
 | `rx_report` / `tx_report` | `rxReport` / `txReport` |
 | `address_id IS NOT NULL` | `hasAddress` |
 | `qsl_send_id IS NOT NULL` | `qslSent` |
@@ -192,8 +197,8 @@ QSL 收件记录。一条呼号可保留多次收件历史；`callsign` 未设�
 ## 维护注意事项
 
 - SQLite 的外键定义默认不会自动启用。实测当前只读连接的 `PRAGMA foreign_keys` 为 `0`；任何负责写入或删除的连接都应在打开后执行 `PRAGMA foreign_keys = ON`，否则 `ON DELETE SET NULL`、级联更新和外键校验不会生效。
-- 服务启动时会执行可重复的模式迁移；当前 `PRAGMA user_version` 为 `2`。变更表结构、索引或约束时，应同步更新迁移与版本号。
-- 日期和时间字段均是 `TEXT`，且未由 `CHECK` 约束验证；应用层必须负责格式与时区约定。
+- 服务启动时会执行可重复的模式迁移；当前 `PRAGMA user_version` 为 `3`。变更表结构、索引或约束时，应同步更新迁移与版本号。
+- 日期和时间字段均是 `TEXT`，且未由 `CHECK` 约束验证；应用层统一按 UTC 生成当前时间，日期使用 `YYYY-MM-DD`，日期时间使用 `YYYY-MM-DD HH:mm`。
 - `note` 字段和 QSL 记录的内部 `id` 未暴露给现有只读 API。扩展接口时需决定是否公开这些字段。
 
 ## 检查命令

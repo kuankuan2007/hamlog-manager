@@ -40,6 +40,7 @@ export interface QSLReceiveRow extends QSLReceive {
 
 interface CommunicationLogRow {
 	id: number;
+	sequenceNumber: number;
 	time: string;
 	callsign: string;
 	frequency: number;
@@ -54,6 +55,7 @@ interface CommunicationLogRow {
 
 const communicationLogColumns = `
 		log.id,
+		log.sequence_number AS sequenceNumber,
 		log.time,
 		log.callsign,
 		log.frequency,
@@ -151,7 +153,8 @@ function getCommunicationLogFilterQuery(filters: CommunicationLogFilters): {
 
 function toCommunicationLog(row: CommunicationLogRow): CommunicationLog {
 	return {
-		sequenceNumber: row.id,
+		id: row.id,
+		sequenceNumber: row.sequenceNumber,
 		time: row.time,
 		callsign: row.callsign,
 		frequency: row.frequency,

@@ -61,6 +61,7 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       "@schema": fileURLToPath(new URL('./schema', import.meta.url)),
+      '@util': fileURLToPath(new URL('./util', import.meta.url)),
     },
   },
   server: {

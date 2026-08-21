@@ -47,24 +47,60 @@ export function normalizeCallsign(callsign: string): string {
 }
 
 async function migrateDatabase(): Promise<void> {
-	const columns = await all<{ name: string }>('PRAGMA table_info(qsl_sends)');
-	if (!columns.some((column) => column.name === 'confirmed_at')) {
-		await run('ALTER TABLE qsl_sends ADD COLUMN confirmed_at TEXT');
+	await run('BEGIN IMMEDIATE');
+	try {
+		const qslSendColumns = await all<{ name: string }>('PRAGMA table_info(qsl_sends)');
+		if (!qslSendColumns.some((column) => column.name === 'confirmed_at')) {
+			await run('ALTER TABLE qsl_sends ADD COLUMN confirmed_at TEXT');
+		}
+		await run(`
+			CREATE TABLE IF NOT EXISTS callsign_email_cache (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				callsign TEXT NOT NULL,
+				email TEXT NOT NULL,
+				updated_at TEXT NOT NULL,
+				provider TEXT NOT NULL
+			)
+		`);
+		await run(`
+			CREATE INDEX IF NOT EXISTS idx_callsign_email_cache_callsign_updated_at_id
+			ON callsign_email_cache(callsign, updated_at DESC, id DESC)
+		`);
+
+		const communicationLogColumns = await all<{ name: string }>(
+			'PRAGMA table_info(communication_logs)'
+		);
+		if (!communicationLogColumns.some((column) => column.name === 'sequence_number')) {
+			await run(
+				'ALTER TABLE communication_logs ADD COLUMN sequence_number INTEGER NOT NULL DEFAULT 0'
+			);
+			await run(`
+				WITH numbered AS (
+					SELECT id, ROW_NUMBER() OVER (ORDER BY time ASC, id ASC) AS sequence_number
+					FROM communication_logs
+				)
+				UPDATE communication_logs
+				SET sequence_number = (
+					SELECT numbered.sequence_number
+					FROM numbered
+					WHERE numbered.id = communication_logs.id
+				)
+			`);
+		}
+		await run(`
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_communication_logs_sequence_number
+			ON communication_logs(sequence_number)
+		`);
+		await run(`
+			CREATE INDEX IF NOT EXISTS idx_communication_logs_time_id
+			ON communication_logs(time DESC, id DESC)
+		`);
+		await run('PRAGMA user_version = 3');
+		await run('COMMIT');
+	} catch (error) {
+		await run('ROLLBACK');
+		throw error;
 	}
-	await run(`
-		CREATE TABLE IF NOT EXISTS callsign_email_cache (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			callsign TEXT NOT NULL,
-			email TEXT NOT NULL,
-			updated_at TEXT NOT NULL,
-			provider TEXT NOT NULL
-		)
-	`);
-	await run(`
-		CREATE INDEX IF NOT EXISTS idx_callsign_email_cache_callsign_updated_at_id
-		ON callsign_email_cache(callsign, updated_at DESC, id DESC)
-	`);
-	await run('PRAGMA user_version = 2');
 }
 
 export const ready = run('PRAGMA foreign_keys = ON')

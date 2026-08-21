@@ -6,15 +6,7 @@ import {
 import type { CreateAddressInput, CreateAddressRequest } from '../../../schema/address';
 import { upsertAddress } from '@server/database/update';
 import { doneStatue, invalidInputStatue } from '../status';
-
-function getToday(): string {
-	const today = new Date();
-	return [
-		today.getFullYear(),
-		String(today.getMonth() + 1).padStart(2, '0'),
-		String(today.getDate()).padStart(2, '0'),
-	].join('-');
-}
+import { getCurrentTimeTagString } from '@util/time';
 
 export const newAddressRouter = new Router({
 	matcher: 'new-address',
@@ -33,7 +25,7 @@ export const newAddressRouter = new Router({
 		}
 		const input: CreateAddressInput = {
 			...request,
-			updatedAt: request.updatedAt ?? getToday(),
+			updatedAt: request.updatedAt ?? getCurrentTimeTagString().slice(0, 10),
 		};
 		await upsertAddress(input);
 		ctx.statue = doneStatue();

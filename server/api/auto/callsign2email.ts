@@ -11,15 +11,10 @@ import {
   type Callsign2EmailMode,
   type Callsign2EmailResponse,
 } from '@server/schema';
+import { getCurrentTimeTagString } from '@util/time';
 
 function isCallsign2EmailMode(value: string | null): value is Callsign2EmailMode {
   return value !== null && callsign2EmailModes.includes(value as Callsign2EmailMode);
-}
-
-function formatCurrentDateTime(): string {
-  const now = new Date();
-  const pad = (value: number) => String(value).padStart(2, '0');
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
 }
 
 function toCachedResponse(
@@ -70,7 +65,7 @@ export const Callsign2EmailRouter = new Router({
       const cache = await insertCallsignEmailCache({
         callsign: normalizedCallsign,
         email,
-        updatedAt: formatCurrentDateTime(),
+        updatedAt: getCurrentTimeTagString(),
         provider: 'select:qrz.com',
       });
       ctx.data = {

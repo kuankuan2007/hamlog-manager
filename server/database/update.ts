@@ -17,7 +17,7 @@ import {
 	validateCreateQSLReceiveInput,
 	validateCreateQSLSendInput,
 } from '../schema';
-import { normalizeCallsign, ready, run, runAndGetId } from './index';
+import { get, normalizeCallsign, ready, run, runAndGetId } from './index';
 import {
 	findAddressByCallsign,
 	findLatestQSLReceiveByCallsign,
@@ -182,7 +182,7 @@ export async function insertCommunicationLog(
 	}
 
 	await ready;
-	await run('BEGIN');
+	await run('BEGIN IMMEDIATE');
 
 	try {
 		const callsign = normalizedInput.callsign;
@@ -194,11 +194,32 @@ export async function insertCommunicationLog(
 		const addressId = address?.id ?? null;
 		const qslSendId = qslSent?.id ?? null;
 		const qslReceiveId = qslReceived?.id ?? null;
-		const sequenceNumber = await runAndGetId(
+		const sequence = await get<{ sequenceNumber: number; maximumSequenceNumber: number }>(
+			`SELECT
+				(SELECT COUNT(*) + 1 FROM communication_logs WHERE time <= ?) AS sequenceNumber,
+				COALESCE(MAX(sequence_number), 0) AS maximumSequenceNumber
+			 FROM communication_logs`,
+			[normalizedInput.time]
+		);
+		if (sequence === undefined) {
+			throw new Error('Unable to determine communication log sequence number');
+		}
+		if (sequence.sequenceNumber <= sequence.maximumSequenceNumber) {
+			const offset = sequence.maximumSequenceNumber + 1;
+			await run(
+				'UPDATE communication_logs SET sequence_number = sequence_number + ? WHERE sequence_number >= ?',
+				[offset, sequence.sequenceNumber]
+			);
+			await run(
+				'UPDATE communication_logs SET sequence_number = sequence_number - ? + 1 WHERE sequence_number >= ?',
+				[offset, sequence.sequenceNumber + offset]
+			);
+		}
+		const communicationLogId = await runAndGetId(
 			`INSERT INTO communication_logs (
 				time, callsign, frequency, mode, rx_report, tx_report, summary,
-				address_id, qsl_send_id, qsl_receive_id
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				address_id, qsl_send_id, qsl_receive_id, sequence_number
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				normalizedInput.time,
 				callsign,
@@ -210,13 +231,14 @@ export async function insertCommunicationLog(
 				addressId,
 				qslSendId,
 				qslReceiveId,
+				sequence.sequenceNumber,
 			]
 		);
-
 		await run('COMMIT');
 		return {
 			...normalizedInput,
-			sequenceNumber,
+			id: communicationLogId,
+			sequenceNumber: sequence.sequenceNumber,
 			callsign,
 			hasAddress: address !== undefined,
 			qslSent: qslSent !== undefined,

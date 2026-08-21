@@ -73,7 +73,7 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 | `postalCode` | string | 是 | 邮政编码 |
 | `address` | string | 是 | 邮寄地址 |
 | `recipientName` | string | 否 | 收件人名称 |
-| `updatedAt` | string | 否 | 地址最后更新时间；未填写时默认为接口服务端当天日期 |
+| `updatedAt` | string | 否 | 地址最后更新时间；未填写时默认为当前 UTC 日期 |
 
 响应状态参见[响应状态](#响应状态)。
 
@@ -147,6 +147,7 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 
 ```json
 {
+  "id": 1,
   "sequenceNumber": 1,
   "time": "2026-08-17 12:34:56",
   "callsign": "JA1ABC",
@@ -163,7 +164,8 @@ Hamlog Manager 提供用于查询和写入通联记录、地址簿和 QSL 收发
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `sequenceNumber` | number | 通联记录序号 |
+| `id` | number | 通联记录稳定标识；用于链接定位，不作为详情页显示序号 |
+| `sequenceNumber` | number | 持久化的时间顺序号；最早记录为 `1`，补录更早记录时后续序号自动顺延，列表仍按时间降序返回 |
 | `time` | string | 通联时间 |
 | `callsign` | string | 对方呼号 |
 | `frequency` | number | 通联频率 |
@@ -360,7 +362,7 @@ GET /api/select/callsign-detail?callsign=JA1ABC
 
 返回：分页 `CommunicationLog` 对象。
 
-该接口只查询 `communication_logs` 表；不会返回地址或 QSL 明细。`hasAddress`、`qslReceived` 和 `qslSent` 分别由 `address_id`、`qsl_receive_id` 与 `qsl_send_id` 是否为 `NULL` 得出。多个状态筛选以 AND 组合；启用 `deduplicateCallsigns` 时，先完成状态筛选，再按通联时间和记录序号倒序为每个呼号保留一条记录，最后分页。
+该接口只查询 `communication_logs` 表；不会返回地址或 QSL 明细。`hasAddress`、`qslReceived` 和 `qslSent` 分别由 `address_id`、`qsl_receive_id` 与 `qsl_send_id` 是否为 `NULL` 得出。多个状态筛选以 AND 组合；启用 `deduplicateCallsigns` 时，先完成状态筛选，再按通联时间和内部 ID 倒序为每个呼号保留一条记录，最后分页。返回列表按时间降序排列，但 `sequenceNumber` 是全体日志持久化的时间升序全局序号，因此最新记录显示最大的序号。
 
 ```text
 GET /api/select/communication-log?page=1&pageSize=20&qslSent=false&qslReceived=false&hasAddress=true&deduplicateCallsigns=true

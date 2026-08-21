@@ -9,6 +9,7 @@
     <table>
       <thead>
         <tr>
+          <th rowspan="2">序号</th>
           <th rowspan="2">Time</th>
           <th rowspan="2">Callsign</th>
           <th rowspan="2">Frequency</th>
@@ -25,7 +26,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="log in communicationLogList" :key="log.sequenceNumber">
+        <tr v-for="log in communicationLogList" :key="log.id">
+          <td>{{ log.sequenceNumber }}</td>
           <td>{{ log.time }}</td>
           <td>{{ showCallsign ? log.callsign : 'XXXXXX' }}</td>
           <td>{{ log.frequency.toFixed(3) }}</td>
@@ -53,7 +55,7 @@
               "
             >
               EN</button
-            >|<a :href="`/callsign/${log.callsign}#log-seq-${log.sequenceNumber}`" target="_blank"
+            >|<a :href="`/callsign/${log.callsign}#log-id-${log.id}`" target="_blank"
               >详情</a
             >
           </td>

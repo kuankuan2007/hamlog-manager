@@ -119,8 +119,8 @@
             <tbody>
               <tr
                 v-for="record in detail.communicationLogs"
-                :key="record.sequenceNumber"
-                :id="`log-seq-${record.sequenceNumber}`"
+                :key="record.id"
+                :id="`log-id-${record.id}`"
               >
                 <td>{{ record.sequenceNumber }}</td>
                 <td>{{ record.callsign }}</td>

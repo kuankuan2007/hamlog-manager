@@ -22,7 +22,8 @@
     "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
-      "@schema/*": ["./schema/*"]
+      "@schema/*": ["./schema/*"],
+      "@util/*": ["./util/*"]
     }
   }
 }

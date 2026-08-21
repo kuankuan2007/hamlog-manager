@@ -21,7 +21,7 @@ import KInputTime from '@/components/input/KInputTime.vue';
 import KInputRs from '@/components/input/KInputRs.vue';
 import KInputMode from '@/components/input/KInputMode.vue';
 import KInputFreq from '@/components/input/KInputFreq.vue';
-import { getCurrentTimeTagString } from '@/scripts/time';
+import { getCurrentTimeTagString } from '@util/time';
 import type { RadioMode } from '@/types/data';
 import { type CreateCommunicationLogInput, newCommunicationLog } from '@/api/update';
 

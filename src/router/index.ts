@@ -64,6 +64,22 @@ const router = createRouter({
         title: '新增通联记录',
       },
     },
+    {
+      path: '/new-address',
+      name: 'new-address',
+      component: () => import('@/views/NewAddress.vue'),
+      props: (route) => ({
+        callsign:
+          typeof route.query.callsign === 'string'
+            ? route.query.callsign
+            : Array.isArray(route.query.callsign)
+              ? route.query.callsign[0]
+              : undefined,
+      }),
+      meta: {
+        title: '新建地址',
+      },
+    }
   ],
 });
 

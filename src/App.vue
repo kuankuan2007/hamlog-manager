@@ -1,6 +1,5 @@
 <template>
   <div class="app-root" :class="{ fullscreen: fullscreen }">
-    <page-header :hide="hideHeader" />
     <div class="app-body">
       <router-view
         v-model:titleValue="title"

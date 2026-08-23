@@ -105,6 +105,7 @@
           <p v-else>暂无QSL接收信息</p>
         </div>
         <div class="communication-log" id="log">
+          <h2>通联信息</h2>
           <table v-if="detail.communicationLogs && detail.communicationLogs.length">
             <thead>
               <tr>

@@ -17,6 +17,7 @@
           <th rowspan="2">Mode</th>
           <th colspan="2">RST</th>
           <th colspan="2">QSL</th>
+          <th rowspan="2">地址</th>
           <th rowspan="2">操作</th>
           <th rowspan="2">复制</th>
         </tr>
@@ -38,6 +39,7 @@
           <td>{{ log.txReport }}</td>
           <td>{{ log.qslReceived ? '是' : '-' }}</td>
           <td>{{ log.qslSent ? '是' : '-' }}</td>
+          <td>{{ log.hasAddress ? '是' : '-' }}</td>
           <td>
             <a :href="`/callsign/${log.callsign}#log-id-${log.id}`" target="_blank">详情</a>|<a
               :href="`/new-log?callsign=${log.callsign}`"

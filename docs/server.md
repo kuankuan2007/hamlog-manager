@@ -52,11 +52,11 @@ pnpm server-start -- --maintain-sequence-numbers
 
 1. `PRAGMA foreign_keys = ON`；
 2. 开始即时事务并执行可重复迁移；
-3. 如有需要，为 `qsl_sends` 增加 `confirmed_at`；
+3. 如有需要，为 `qsl_sends` 增加 `confirmed_at`、`status` 和 `tracking_number`；
 4. 创建邮箱缓存表及索引；
 5. 如有需要，为通联表增加并回填 `sequence_number`；
 6. 创建序号唯一索引和时间/ID 索引；
-7. 设置 `PRAGMA user_version = 3`；
+7. 设置 `PRAGMA user_version = 4`；
 8. 提交事务；
 9. 确保呼号、时间、频率组合索引存在。
 
@@ -92,7 +92,7 @@ pnpm server-start -- --maintain-sequence-numbers
 
 ### QSL 记录
 
-新发件或收件会各自新增历史记录，并关联相同呼号中尚未关联对应 QSL 的通联。确认发件只更新按 `sent_at DESC, id DESC` 排序后的最新一条发件记录。
+新发件或收件会各自新增历史记录，并关联相同呼号中尚未关联对应 QSL 的通联。新发件的 `status` 和 `tracking_number` 默认为 `NULL`；确认发件只更新按 `sent_at DESC, id DESC` 排序后的最新一条发件记录。
 
 ## 序号维护
 

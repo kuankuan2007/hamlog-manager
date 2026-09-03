@@ -3,21 +3,23 @@ import type { ErrorObject } from 'ajv';
 import { CreateAddressInputSchema, CreateAddressRequestSchema } from '../../schema/address';
 import type { CreateAddressInput, CreateAddressRequest } from '../../schema/address';
 import {
+  CreateCommunicationLogInputSchema,
+  DateTimeFormatName,
+  isValidDateTime,
+} from '../../schema/communicationLog';
+import type { CreateCommunicationLogInput } from '../../schema/communicationLog';
+import {
   ConfirmQSLSendInputSchema,
   CreateQSLReceiveInputSchema,
   CreateQSLSendInputSchema,
-  CreateCommunicationLogInputSchema,
   DateFormatName,
-  DateTimeFormatName,
   isValidDate,
-  isValidDateTime,
-} from '../../schema/communicationLog';
+} from '../../schema/qsl';
 import type {
   ConfirmQSLSendInput,
-  CreateCommunicationLogInput,
   CreateQSLReceiveInput,
   CreateQSLSendInput,
-} from '../../schema/communicationLog';
+} from '../../schema/qsl';
 
 export const ajv = new Ajv({ allErrors: true });
 ajv.addFormat(DateFormatName, { type: 'string', validate: isValidDate });

@@ -6,6 +6,7 @@
       </button>
       <a href="/new-log" target="_blank">新建日志</a>
       <a href="/callsign-search" target="_blank">呼号搜索</a>
+      <a href="/qsl-manager" target="_blank">QSL 管理</a>
     </div>
     <table>
       <thead>

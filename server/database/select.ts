@@ -1,6 +1,7 @@
 import { all, get, normalizeCallsign, ready } from './index';
 import type { Address } from '@schema/address';
-import type { CallsignDetail, CommunicationLog, QSLReceive, QSLSend, CommunicationLogBasic, CommunicationLogSearchBasic, CommunicationLogSearchResult } from '@schema/communicationLog';
+import type { CallsignDetail, CommunicationLog, CommunicationLogBasic, CommunicationLogSearchBasic, CommunicationLogSearchResult } from '@schema/communicationLog';
+import type { QSLReceive, QSLSend } from '@schema/qsl';
 import type { PaginatedResult } from '@schema/utils';
 
 export interface CommunicationLogFilters {
@@ -11,14 +12,6 @@ export interface CommunicationLogFilters {
 }
 
 export interface AddressRow extends Address {
-	id: number;
-}
-
-export interface QSLSendRow extends QSLSend {
-	id: number;
-}
-
-export interface QSLReceiveRow extends QSLReceive {
 	id: number;
 }
 
@@ -77,9 +70,10 @@ export function findAddressByCallsign(callsign: string): Promise<AddressRow | un
 	);
 }
 
-export function findLatestQSLSendByCallsign(callsign: string): Promise<QSLSendRow | undefined> {
-	return get<QSLSendRow>(
-		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
+export function findLatestQSLSendByCallsign(callsign: string): Promise<QSLSend | undefined> {
+	return get<QSLSend>(
+		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt,
+				status, tracking_number AS trackingNumber
 		 FROM qsl_sends
 		 WHERE callsign = ?
 		 ORDER BY sent_at DESC, id DESC
@@ -88,8 +82,8 @@ export function findLatestQSLSendByCallsign(callsign: string): Promise<QSLSendRo
 	);
 }
 
-export function findLatestQSLReceiveByCallsign(callsign: string): Promise<QSLReceiveRow | undefined> {
-	return get<QSLReceiveRow>(
+export function findLatestQSLReceiveByCallsign(callsign: string): Promise<QSLReceive | undefined> {
+	return get<QSLReceive>(
 		`SELECT id, callsign, received_at AS receivedAt
 		 FROM qsl_receives
 		 WHERE callsign = ?
@@ -305,15 +299,24 @@ export async function selectAddressesByCallsigns(callsigns: string[]): Promise<A
 export async function selectQSLReceives(): Promise<QSLReceive[]> {
 	await ready;
 	return all<QSLReceive>(
-		'SELECT callsign, received_at AS receivedAt FROM qsl_receives ORDER BY received_at DESC, id DESC'
+		'SELECT id, callsign, received_at AS receivedAt FROM qsl_receives ORDER BY received_at DESC, id DESC'
 	);
+}
+
+export async function selectQSLReceiveById(id: number): Promise<QSLReceive | null> {
+	await ready;
+	const qslReceive = await get<QSLReceive>(
+		'SELECT id, callsign, received_at AS receivedAt FROM qsl_receives WHERE id = ?',
+		[id]
+	);
+	return qslReceive ?? null;
 }
 
 export async function selectQSLReceivesByCallsign(callsign: string): Promise<QSLReceive[]> {
 	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	return all<QSLReceive>(
-		`SELECT callsign, received_at AS receivedAt
+		`SELECT id, callsign, received_at AS receivedAt
 		 FROM qsl_receives
 		 WHERE callsign = ?
 		 ORDER BY received_at DESC, id DESC`,
@@ -327,7 +330,7 @@ export async function selectQSLReceivesByCallsigns(callsigns: string[]): Promise
 	if (normalizedCallsigns.length === 0) return [];
 
 	return all<QSLReceive>(
-		`SELECT callsign, received_at AS receivedAt
+		`SELECT id, callsign, received_at AS receivedAt
 		 FROM qsl_receives
 		 WHERE callsign IN (${normalizedCallsigns.map(() => '?').join(', ')})
 		 ORDER BY received_at DESC, id DESC`,
@@ -338,17 +341,31 @@ export async function selectQSLReceivesByCallsigns(callsigns: string[]): Promise
 export async function selectQSLSends(): Promise<QSLSend[]> {
 	await ready;
 	return all<QSLSend>(
-		`SELECT callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
+		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt,
+				status, tracking_number AS trackingNumber
 		 FROM qsl_sends
 		 ORDER BY sent_at DESC, id DESC`
 	);
+}
+
+export async function selectQSLSendById(id: number): Promise<QSLSend | null> {
+	await ready;
+	const qslSend = await get<QSLSend>(
+		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt,
+				status, tracking_number AS trackingNumber
+		 FROM qsl_sends
+		 WHERE id = ?`,
+		[id]
+	);
+	return qslSend ?? null;
 }
 
 export async function selectQSLSendsByCallsign(callsign: string): Promise<QSLSend[]> {
 	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	return all<QSLSend>(
-		`SELECT callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
+		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt,
+				status, tracking_number AS trackingNumber
 		 FROM qsl_sends
 		 WHERE callsign = ?
 		 ORDER BY sent_at DESC, id DESC`,
@@ -362,7 +379,8 @@ export async function selectQSLSendsByCallsigns(callsigns: string[]): Promise<QS
 	if (normalizedCallsigns.length === 0) return [];
 
 	return all<QSLSend>(
-		`SELECT callsign, sent_at AS sentAt, confirmed_at AS confirmedAt
+		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt,
+				status, tracking_number AS trackingNumber
 		 FROM qsl_sends
 		 WHERE callsign IN (${normalizedCallsigns.map(() => '?').join(', ')})
 		 ORDER BY sent_at DESC, id DESC`,

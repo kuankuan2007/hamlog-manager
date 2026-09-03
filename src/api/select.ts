@@ -4,6 +4,7 @@ import type {
   CommunicationLog,
   CommunicationLogSearchResult,
 } from '@schema/communicationLog';
+import type { QSLReceive, QSLSend } from '@schema/qsl';
 import type { PaginatedResult, ServerResponse } from '@schema/utils';
 
 export type { CallsignDetail } from '@schema/communicationLog';
@@ -25,9 +26,9 @@ async function getData<T>(response: Promise<Response> | Response): Promise<T> {
   }
   const body = (await _response.json()) as ServerResponse<T>;
   if (!body.ok) {
-    throw new Error(errorMessageFromResponse(body.code, body.message));
+    throw new Error(errorMessageFromResponse(body.code, body.msg));
   }
-  return body.data;
+  return body.data as T;
 }
 
 export async function selectCommunicationLogs(
@@ -52,6 +53,22 @@ export async function selectAddressesByCallsigns(callsigns: string[]): Promise<A
 
   const params = new URLSearchParams({ callsign: callsigns.join(',') });
   return await getData<Address[]>(fetch(`/api/select/address-query?${params.toString()}`));
+}
+
+export async function selectQSLSends(): Promise<QSLSend[]> {
+  return await getData<QSLSend[]>(fetch('/api/select/qsl-send'));
+}
+
+export async function selectQSLSendById(id: number): Promise<QSLSend | null> {
+  return await getData<QSLSend | null>(fetch(`/api/select/qsl-send/id/${id}`));
+}
+
+export async function selectQSLReceives(): Promise<QSLReceive[]> {
+  return await getData<QSLReceive[]>(fetch('/api/select/qsl-receive'));
+}
+
+export async function selectQSLReceiveById(id: number): Promise<QSLReceive | null> {
+  return await getData<QSLReceive | null>(fetch(`/api/select/qsl-receive/id/${id}`));
 }
 
 export async function selectCallsignDetail(callsign: string): Promise<CallsignDetail> {

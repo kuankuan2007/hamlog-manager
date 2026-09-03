@@ -9,7 +9,7 @@
       <p>地址：
       <input type="text" id="address" name="address" required v-model="address"></p>
       <p>收件人姓名：
-      <input type="text" id="recipientName" name="recipientName" required v-model="recipientName"></p>
+      <input type="text" id="recipientName" name="recipientName" v-model="recipientName"></p>
       <p><button type="submit">提交</button></p>
     </form>
   </div>

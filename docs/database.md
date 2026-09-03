@@ -4,7 +4,7 @@
 
 ## 概览
 
-- `PRAGMA user_version = 3`
+- `PRAGMA user_version = 4`
 - 五张业务表：`communication_logs`、`addresses`、`qsl_sends`、`qsl_receives`、`callsign_email_cache`
 - 无业务视图或触发器
 - 所有业务表均使用 `INTEGER PRIMARY KEY AUTOINCREMENT`
@@ -46,6 +46,8 @@ erDiagram
         TEXT sent_at
         TEXT note
         TEXT confirmed_at
+        TEXT status
+        TEXT tracking_number
     }
     QSL_RECEIVES {
         INTEGER id PK
@@ -105,6 +107,8 @@ erDiagram
 | `sent_at` | TEXT | 否 | 发件日期 |
 | `note` | TEXT | 是 | 备注；当前 API 未公开 |
 | `confirmed_at` | TEXT | 是 | 对方确认日期；由版本迁移补充 |
+| `status` | TEXT | 是 | 发件状态；仅可为 `received`、`returned` 或 `NULL`，默认 `NULL` |
+| `tracking_number` | TEXT | 是 | 物流单号，默认 `NULL` |
 
 ### `qsl_receives`
 
@@ -158,7 +162,7 @@ erDiagram
 
 ## 迁移边界
 
-当前迁移可以从旧版本增量更新到版本 3，但不能从全空 SQLite 文件创建所有核心表。`callsign_email_cache` 是唯一由现有迁移完整创建的业务表；其他核心表必须已存在。备份和部署时应把数据库文件视为必要运行资产。
+当前迁移可以从旧版本增量更新到版本 4，但不能从全空 SQLite 文件创建所有核心表。版本 4 为 `qsl_sends` 增加可空的 `status` 和 `tracking_number`；`callsign_email_cache` 是唯一由现有迁移完整创建的业务表，其他核心表必须已存在。备份和部署时应把数据库文件视为必要运行资产。
 
 ## 维护建议
 

@@ -10,6 +10,10 @@ Web 客户端位于 `src/`，使用 Vue 3、Vue Router、Vite 和 Sass。入口 
 | `/callsign-search` | `CallsignSearch` | 按呼号片段实时搜索 |
 | `/callsign/:callsign` | `CallsignDetail` | 展示呼号详情、通联、地址、QSL 和邮箱 |
 | `/new-log` | `NewLog` | 填写并提交新通联记录 |
+| `/new-qsl-send` | `NewQSLSend` | 填写并提交 QSL 发件记录 |
+| `/new-qsl-receive` | `NewQSLReceive` | 填写并提交 QSL 收件记录 |
+| `/confirm-qsl-send?id={id}` | `ConfirmQSLSend` | 按 ID 确认 QSL 发件并更新状态 |
+| `/qsl-manager` | `QslManager` | 查看全部 QSL 收发记录并快速确认发件 |
 | `/address-print` | `AddressPrint` | 筛选待寄 QSL 的呼号、批量读取地址并打印 |
 | `/:pathMatch(.*)*` | `PageNotFoundView` | 404 页面 |
 
@@ -33,6 +37,14 @@ Web 客户端位于 `src/`，使用 Vue 3、Vue Router、Vite 和 Sass。入口 
 
 表单默认使用当前 UTC 时间标签。当前 UI 中模式类型和输入组件仅提供 `FM`、`AM`、`CW`，但服务端共享 Schema 接受任意非空模式字符串。输入组件还包括频率、信号报告、时间和时区处理。
 
+### 新增 QSL 收发记录
+
+`NewQSLSend` 和 `NewQSLReceive` 分别提交 QSL 发件与收件记录，日期默认使用当前 UTC 日期。两个页面均支持通过 `?callsign=JA1ABC` 预填目标呼号，并在提交前使用共享 Schema 进行浏览器端校验。
+
+`ConfirmQSLSend` 通过 `?id={id}` 加载唯一一条 QSL 发件记录，可将状态设为“已收到”或“已退回”。已有确认值会用于初始化表单，否则确认日期默认使用当前 UTC 日期。
+
+`QslManager` 并行加载全部 QSL 发件与收件记录并显示公开 ID。每条发件记录提供按 ID 确认或更新的快捷链接。
+
 ### 地址打印
 
 页面先查询“未发送 QSL、已有地址、按呼号去重”的通联列表，再按呼号批量获取地址，用于打印寄送信息。该页面依赖分页接口的当前页数据，默认请求参数应与待打印规模一并考虑。
@@ -43,11 +55,11 @@ Web 客户端位于 `src/`，使用 Vue 3、Vue Router、Vite 和 Sass。入口 
 | --- | --- |
 | `src/api/util.ts` | 解析统一响应、处理 HTTP 和业务错误、发送 JSON |
 | `src/api/select.ts` | 通联列表、搜索、详情、地址等读取接口 |
-| `src/api/update.ts` | 新增通联和地址，并在发送前执行客户端校验 |
+| `src/api/update.ts` | 新增通联、地址及 QSL 收发记录，并在发送前执行客户端校验 |
 | `src/api/auto.ts` | 呼号邮箱查询 |
 | `src/api/schema/` | 浏览器侧 Ajv 校验器 |
 
-`getData()` 会先检查 HTTP `response.ok`，再检查 JSON 响应体的 `ok`。`sendData()` 使用 POST 和 JSON 字符串请求体；当前实现未显式设置 `Content-Type: application/json`，服务端框架仍按 JSON 读取请求体。
+`getData()` 会先检查 HTTP `response.ok`，再检查 JSON 响应体的 `ok`。`sendData()` 使用 POST、`Content-Type: application/json` 和 JSON 字符串请求体。
 
 接口路径使用同源相对 URL。开发时 Vite 把 `/api` 代理到 `http://localhost:3000`；生产部署需要由同源服务或反向代理提供该路径。
 

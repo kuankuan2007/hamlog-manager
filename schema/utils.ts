@@ -7,6 +7,6 @@ export interface PaginatedResult<T> {
 export interface ServerResponse<T> {
   ok: boolean;
   code: number;
-  message?: string;
-  data: T;
+	msg?: string;
+	data?: T;
 }

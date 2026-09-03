@@ -53,6 +53,14 @@ async function migrateDatabase(): Promise<void> {
 		if (!qslSendColumns.some((column) => column.name === 'confirmed_at')) {
 			await run('ALTER TABLE qsl_sends ADD COLUMN confirmed_at TEXT');
 		}
+		if (!qslSendColumns.some((column) => column.name === 'status')) {
+			await run(
+				"ALTER TABLE qsl_sends ADD COLUMN status TEXT DEFAULT NULL CHECK (status IN ('received', 'returned'))"
+			);
+		}
+		if (!qslSendColumns.some((column) => column.name === 'tracking_number')) {
+			await run('ALTER TABLE qsl_sends ADD COLUMN tracking_number TEXT DEFAULT NULL');
+		}
 		await run(`
 			CREATE TABLE IF NOT EXISTS callsign_email_cache (
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,7 +103,7 @@ async function migrateDatabase(): Promise<void> {
 			CREATE INDEX IF NOT EXISTS idx_communication_logs_time_id
 			ON communication_logs(time DESC, id DESC)
 		`);
-		await run('PRAGMA user_version = 3');
+		await run('PRAGMA user_version = 4');
 		await run('COMMIT');
 	} catch (error) {
 		await run('ROLLBACK');

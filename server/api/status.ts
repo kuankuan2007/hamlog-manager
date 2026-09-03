@@ -19,9 +19,9 @@ export function invalidInputStatue(message: string): Statue {
 }
 
 /**
- * 表示请求的呼号不存在任何 QSL 发件记录。
+ * 表示请求的 ID 不存在对应的 QSL 发件记录。
  *
- * 响应状态为 10002，消息包含未找到记录的呼号，响应标记为失败。
+ * 响应状态为 10002，消息包含未找到记录的 ID，响应标记为失败。
  */
 export function qslSendNotFoundStatue(message: string): Statue {
 	return new Statue(10002, message, false);

@@ -62,7 +62,7 @@
             </tbody>
           </table>
         </div>
-        <p v-else>暂无地址信息</p>
+        <p v-else>暂无地址信息，<a class="new-address-button" :href="`/new-address?callsign=${callsign}`" target="_blank">新增地址</a></p>
       </div>
       <div class="qsl-info" id="qsl">
         <h2>QSL收发信息</h2>
@@ -71,16 +71,28 @@
           <table v-if="detail.qslSends && detail.qslSends.length">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>{{ getShowText('callsign') }}</th>
                 <th>{{ getShowText('sentAt') }}</th>
                 <th>{{ getShowText('confirmedAt') }}</th>
+                <th>{{ getShowText('status') }}</th>
+                <th>{{ getShowText('trackingNumber') }}</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="record in detail.qslSends" :key="record.callsign + record.sentAt">
+              <tr v-for="record in detail.qslSends" :key="record.id">
+                <td>{{ record.id }}</td>
                 <td>{{ record.callsign }}</td>
                 <td>{{ record.sentAt }}</td>
                 <td>{{ record.confirmedAt }}</td>
+                <td>{{ record.status }}</td>
+                <td>{{ record.trackingNumber }}</td>
+                <td>
+                  <a :href="`/confirm-qsl-send?id=${record.id}`" target="_blank">
+                    {{ record.confirmedAt === null ? '确认' : '更新' }}
+                  </a>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -91,12 +103,14 @@
           <table v-if="detail.qslReceives && detail.qslReceives.length">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>{{ getShowText('callsign') }}</th>
                 <th>{{ getShowText('receivedAt') }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="record in detail.qslReceives" :key="record.callsign + record.receivedAt">
+              <tr v-for="record in detail.qslReceives" :key="record.id">
+                <td>{{ record.id }}</td>
                 <td>{{ record.callsign }}</td>
                 <td>{{ record.receivedAt }}</td>
               </tr>
@@ -231,4 +245,17 @@ watch(
 .email-refresh-button {
   cursor: pointer;
 }
+a.new-address-button {
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+    border: 1px solid;
+    background-color: transparent;
+    margin-left: 0.5em;
+    text-decoration: none;
+    font-size: 1em;
+    @include theme.use {
+      color: theme.mix('color', 'active-color', 50%);
+      border-color: theme.mix('color', 'active-color', 50%);
+    }
+  }
 </style>

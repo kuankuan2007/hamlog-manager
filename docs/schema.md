@@ -1,6 +1,6 @@
 # 共享数据模型与校验
 
-共享模型位于 `schema/`，供 Web 与服务端共同使用；服务端在 `server/schema/index.ts` 中使用 Ajv 编译并执行校验。数据库列采用 snake_case，API 和 TypeScript 类型采用 camelCase。
+共享模型位于 `schema/`，供 Web 与服务端共同使用；通信日志模型位于 `schema/communicationLog.ts`，QSL 类型、日期校验和输入 Schema 位于 `schema/qsl.ts`。服务端在 `server/schema/index.ts` 中使用 Ajv 编译并执行校验。数据库列采用 snake_case，API 和 TypeScript 类型采用 camelCase。
 
 ## 核心读取模型
 
@@ -35,11 +35,11 @@
 
 ### QSL 模型
 
-`QSLSend` 包含 `callsign: string`、`sentAt: string`、`confirmedAt: string | null`。
+`QSLSend` 包含 `id: number`、`callsign: string`、`sentAt: string`、`confirmedAt: string | null`、`status: 'received' | 'returned' | null` 和 `trackingNumber: string | null`。`status` 为 `received` 时表示邮件已收到，为 `returned` 时表示邮件被退回；`null` 表示状态尚未确认。
 
-`QSLReceive` 包含 `callsign: string`、`receivedAt: string`。
+`QSLReceive` 包含 `id: number`、`callsign: string`、`receivedAt: string`。
 
-数据库中的 QSL `id` 和 `note` 当前不向 API 读取模型暴露。
+QSL `id` 是数据库自增主键，并向 API 读取模型公开，用于无歧义地读取和更新单条记录。数据库中的 `note` 当前不向 API 读取模型暴露。
 
 ### `CallsignDetail`
 
@@ -64,12 +64,12 @@ HTTP 响应使用 `ServerResponse<T>`：
 {
   "ok": true,
   "code": 200,
-  "message": "Done",
+  "msg": "Done",
   "data": null
 }
 ```
 
-`message` 可选，`data` 的具体类型由接口决定。
+`msg` 和 `data` 可选，`data` 的具体类型由接口决定。写入成功响应通常不包含 `data`。
 
 ## 写入模型与约束
 
@@ -101,9 +101,11 @@ HTTP 响应使用 `ServerResponse<T>`：
 | --- | --- | --- |
 | `CreateQSLSendInput` | `callsign`, `sentAt` | `sentAt` |
 | `CreateQSLReceiveInput` | `callsign`, `receivedAt` | `receivedAt` |
-| `ConfirmQSLSendInput` | `callsign`, `confirmedAt` | `confirmedAt` |
+| `ConfirmQSLSendInput` | `id`, `confirmedAt`, `status` | `confirmedAt` |
 
 呼号必须为非空字符串，日期字段必须是有效的 `YYYY-MM-DD`。
+确认发件时，`id` 必须是正整数，`status` 必须为 `received` 或 `returned`。
+新增发件接口不接收状态和物流单号；新记录的 `status` 与 `trackingNumber` 均默认为 `null`。
 
 ## 日期校验
 

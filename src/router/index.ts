@@ -1,6 +1,19 @@
 import PageNotFoundView from '@/views/PageNotFoundView.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 
+function getCallsignQuery(query: unknown): string | undefined {
+  if (typeof query === 'string') return query;
+  if (Array.isArray(query) && typeof query[0] === 'string') return query[0];
+  return undefined;
+}
+
+function getPositiveIntegerQuery(query: unknown): number | undefined {
+  const value = getCallsignQuery(query);
+  if (value === undefined || !/^\d+$/.test(value)) return undefined;
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : undefined;
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -53,12 +66,7 @@ const router = createRouter({
       name: 'new-log',
       component: () => import('@/views/NewLog.vue'),
       props: (route) => ({
-        callsign:
-          typeof route.query.callsign === 'string'
-            ? route.query.callsign
-            : Array.isArray(route.query.callsign)
-              ? route.query.callsign[0]
-              : undefined,
+        callsign: getCallsignQuery(route.query.callsign),
       }),
       meta: {
         title: '新增通联记录',
@@ -69,17 +77,53 @@ const router = createRouter({
       name: 'new-address',
       component: () => import('@/views/NewAddress.vue'),
       props: (route) => ({
-        callsign:
-          typeof route.query.callsign === 'string'
-            ? route.query.callsign
-            : Array.isArray(route.query.callsign)
-              ? route.query.callsign[0]
-              : undefined,
+        callsign: getCallsignQuery(route.query.callsign),
       }),
       meta: {
         title: '新建地址',
       },
-    }
+    },
+    {
+      path: '/new-qsl-send',
+      name: 'new-qsl-send',
+      component: () => import('@/views/NewQSLSend.vue'),
+      props: (route) => ({
+        callsign: getCallsignQuery(route.query.callsign),
+      }),
+      meta: {
+        title: '新增 QSL 发件记录',
+      },
+    },
+    {
+      path: '/new-qsl-receive',
+      name: 'new-qsl-receive',
+      component: () => import('@/views/NewQSLReceive.vue'),
+      props: (route) => ({
+        callsign: getCallsignQuery(route.query.callsign),
+      }),
+      meta: {
+        title: '新增 QSL 收件记录',
+      },
+    },
+    {
+      path: '/confirm-qsl-send',
+      name: 'confirm-qsl-send',
+      component: () => import('@/views/ConfirmQSLSend.vue'),
+      props: (route) => ({
+        id: getPositiveIntegerQuery(route.query.id),
+      }),
+      meta: {
+        title: '确认 QSL 发件记录',
+      },
+    },
+    {
+      path: '/qsl-manager',
+      name: 'qsl-manager',
+      component: () => import('@/views/QslManager.vue'),
+      meta: {
+        title: 'QSL 管理',
+      },
+    },
   ],
 });
 

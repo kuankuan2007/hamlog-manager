@@ -10,7 +10,7 @@ API 默认监听 `http://localhost:3000`，所有业务路由以 `/api` 开头�
 {
   "ok": true,
   "code": 200,
-  "message": "Done",
+  "msg": "Done",
   "data": {}
 }
 ```
@@ -20,8 +20,8 @@ API 默认监听 `http://localhost:3000`，所有业务路由以 `/api` 开头�
 | `code` | `ok` | 含义 |
 | --- | --- | --- |
 | `200` | `true` | 操作完成 |
-| `10001` | `false` | 输入或查询参数无效，`message` 给出原因 |
-| `10002` | `false` | 确认 QSL 发件时找不到该呼号的发件记录 |
+| `10001` | `false` | 输入或查询参数无效，`msg` 给出原因 |
+| `10002` | `false` | 确认 QSL 发件时找不到指定 ID 的发件记录 |
 
 不支持的 HTTP 方法由框架返回 Method Not Allowed。未捕获的 JSON、数据库和外部服务错误不保证使用上述业务码。
 
@@ -38,9 +38,11 @@ API 默认监听 `http://localhost:3000`，所有业务路由以 `/api` 开头�
 | GET | `/api/select/address/{callsign}` | 查询单个地址 |
 | GET | `/api/select/address-query` | 批量查询地址 |
 | GET | `/api/select/qsl-send` | 查询全部 QSL 发件 |
+| GET | `/api/select/qsl-send/id/{id}` | 按 ID 查询单条 QSL 发件 |
 | GET | `/api/select/qsl-send/{callsign}` | 按呼号查询 QSL 发件 |
 | GET | `/api/select/qsl-send-query` | 批量查询 QSL 发件 |
 | GET | `/api/select/qsl-receive` | 查询全部 QSL 收件 |
+| GET | `/api/select/qsl-receive/id/{id}` | 按 ID 查询单条 QSL 收件 |
 | GET | `/api/select/qsl-receive/{callsign}` | 按呼号查询 QSL 收件 |
 | GET | `/api/select/qsl-receive-query` | 批量查询 QSL 收件 |
 | GET | `/api/auto/callsign2email` | 查询呼号邮箱 |
@@ -48,7 +50,7 @@ API 默认监听 `http://localhost:3000`，所有业务路由以 `/api` 开头�
 | POST | `/api/update/new-address` | 新增或更新地址 |
 | POST | `/api/update/new-qsl-send` | 新增 QSL 发件 |
 | POST | `/api/update/new-qsl-receive` | 新增 QSL 收件 |
-| POST | `/api/update/confirm-qsl-send` | 确认最新 QSL 发件 |
+| POST | `/api/update/confirm-qsl-send` | 按 ID 确认 QSL 发件 |
 
 完整字段定义见 [共享数据模型与校验](schema.md)。
 
@@ -141,18 +143,20 @@ GET /api/select/communication-log?page=1&pageSize=20&qslSent=false&hasAddress=tr
 ### 发件
 
 - `GET /api/select/qsl-send`：返回全部 `QSLSend[]`。
+- `GET /api/select/qsl-send/id/{id}`：按正整数 ID 返回单条 `QSLSend`；不存在时返回 `null`。
 - `GET /api/select/qsl-send/{callsign}`：返回指定呼号记录。
 - `GET /api/select/qsl-send-query?callsign=JA1ABC,JA2DEF`：批量查询。
 
-结果按 `sentAt DESC`、内部 ID 倒序；内部 ID 不向 API 暴露。
+结果按 `sentAt DESC`、`id DESC` 排序。每条记录公开稳定的整数 `id`，还包含 `status` 和 `trackingNumber`：`status` 可为 `received`、`returned` 或 `null`，`trackingNumber` 为字符串或 `null`。
 
 ### 收件
 
 - `GET /api/select/qsl-receive`：返回全部 `QSLReceive[]`。
+- `GET /api/select/qsl-receive/id/{id}`：按正整数 ID 返回单条 `QSLReceive`；不存在时返回 `null`。
 - `GET /api/select/qsl-receive/{callsign}`：返回指定呼号记录。
 - `GET /api/select/qsl-receive-query?callsign=JA1ABC,JA2DEF`：批量查询。
 
-结果按 `receivedAt DESC`、内部 ID 倒序。批量参数处理规则与地址一致。
+结果按 `receivedAt DESC`、`id DESC` 排序。每条记录公开稳定的整数 `id`。批量参数处理规则与地址一致。
 
 ## 邮箱自动查询
 
@@ -231,7 +235,7 @@ GET /api/select/communication-log?page=1&pageSize=20&qslSent=false&hasAddress=tr
 }
 ```
 
-新增记录的 `confirmedAt` 为 `null`，并关联同呼号中尚无发件记录的通联。
+新增记录的 `confirmedAt`、`status` 和 `trackingNumber` 均为 `null`，并关联同呼号中尚无发件记录的通联。当前新增接口不接收状态或物流单号。
 
 ### 新增 QSL 收件
 
@@ -246,18 +250,19 @@ GET /api/select/communication-log?page=1&pageSize=20&qslSent=false&hasAddress=tr
 
 新增后关联同呼号中尚无收件记录的通联。
 
-### 确认最新发件
+### 按 ID 确认发件
 
 `POST /api/update/confirm-qsl-send`
 
 ```json
 {
-  "callsign": "JA1ABC",
-  "confirmedAt": "2026-08-20"
+  "id": 42,
+  "confirmedAt": "2026-08-20",
+  "status": "received"
 }
 ```
 
-服务按发件日期和内部 ID 倒序选取该呼号最新发件并更新确认日期。没有发件记录时返回 `10002`。
+`id` 必须是正整数；`status` 可为 `received`（已收到）或 `returned`（已退回）。服务只更新该 ID 对应发件的确认日期和状态，不修改呼号、发送日期或物流单号。记录不存在时返回 `10002`。
 
 ## 日期和呼号注意事项
 

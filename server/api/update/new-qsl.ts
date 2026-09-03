@@ -9,9 +9,9 @@ import type {
 	ConfirmQSLSendInput,
 	CreateQSLReceiveInput,
 	CreateQSLSendInput,
-} from '../../../schema/communicationLog';
+} from '../../../schema/qsl';
 import {
-	confirmLatestQSLSend,
+	confirmQSLSend,
 	insertQSLReceive,
 	insertQSLSend,
 	QSLSendNotFoundError,
@@ -75,7 +75,7 @@ export const confirmQSLSendRouter = new Router({
 			return;
 		}
 		try {
-			await confirmLatestQSLSend(input);
+			await confirmQSLSend(input);
 			ctx.statue = doneStatue();
 		} catch (error) {
 			if (error instanceof QSLSendNotFoundError) {

@@ -12,11 +12,13 @@ import {
   SelectCommunicationLogsRouter,
 } from './communicationLog';
 import {
+  SelectQSLReceiveByIdRouter,
   SelectQSLReceivesByCallsignRouter,
   SelectQSLReceivesByCallsignsRouter,
   SelectQSLReceivesRouter,
 } from './qslReceive';
 import {
+  SelectQSLSendByIdRouter,
   SelectQSLSendsByCallsignRouter,
   SelectQSLSendsByCallsignsRouter,
   SelectQSLSendsRouter,
@@ -37,8 +39,10 @@ SelectRouter.addRouter(SelectAddressesByCallsignsRouter);
 SelectRouter.addRouter(SelectAddressByCallsignRouter);
 SelectRouter.addRouter(SelectQSLReceivesRouter);
 SelectRouter.addRouter(SelectQSLReceivesByCallsignsRouter);
+SelectRouter.addRouter(SelectQSLReceiveByIdRouter);
 SelectRouter.addRouter(SelectQSLReceivesByCallsignRouter);
 SelectRouter.addRouter(SelectQSLSendsRouter);
 SelectRouter.addRouter(SelectQSLSendsByCallsignsRouter);
+SelectRouter.addRouter(SelectQSLSendByIdRouter);
 SelectRouter.addRouter(SelectQSLSendsByCallsignRouter);
 

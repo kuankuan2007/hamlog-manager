@@ -4,12 +4,22 @@ import { CreateAddressRequestSchema } from '@schema/address';
 import type { CreateAddressRequest } from '@schema/address';
 import {
   CreateCommunicationLogInputSchema,
-  DateFormatName,
   DateTimeFormatName,
-  isValidDate,
   isValidDateTime,
 } from '@schema/communicationLog';
 import type { CreateCommunicationLogInput } from '@schema/communicationLog';
+import {
+  ConfirmQSLSendInputSchema,
+  CreateQSLReceiveInputSchema,
+  CreateQSLSendInputSchema,
+  DateFormatName,
+  isValidDate,
+} from '@schema/qsl';
+import type {
+  ConfirmQSLSendInput,
+  CreateQSLReceiveInput,
+  CreateQSLSendInput,
+} from '@schema/qsl';
 
 export const ajv = new Ajv({ allErrors: true });
 ajv.addFormat(DateFormatName, { type: 'string', validate: isValidDate });
@@ -17,6 +27,18 @@ ajv.addFormat(DateTimeFormatName, { type: 'string', validate: isValidDateTime })
 
 export const validateCreateCommunicationLogInput = ajv.compile<CreateCommunicationLogInput>(
   CreateCommunicationLogInputSchema
+);
+
+export const validateCreateQSLSendInput = ajv.compile<CreateQSLSendInput>(
+  CreateQSLSendInputSchema
+);
+
+export const validateCreateQSLReceiveInput = ajv.compile<CreateQSLReceiveInput>(
+  CreateQSLReceiveInputSchema
+);
+
+export const validateConfirmQSLSendInput = ajv.compile<ConfirmQSLSendInput>(
+  ConfirmQSLSendInputSchema
 );
 
 export const validateCreateAddressRequest = ajv.compile<CreateAddressRequest>(

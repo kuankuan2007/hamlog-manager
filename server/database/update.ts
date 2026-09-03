@@ -1,12 +1,13 @@
 import type {
 	ConfirmQSLSendInput,
-	CreateCommunicationLogInput,
 	CreateQSLReceiveInput,
 	CreateQSLSendInput,
-} from '../../schema/communicationLog';
+} from '../../schema/qsl';
+import type { CreateCommunicationLogInput } from '../../schema/communicationLog';
 import type { CreateAddressInput } from '../../schema/address';
 import type { Address } from '../../schema/address';
-import type { CommunicationLog, QSLReceive, QSLSend } from '../../schema/communicationLog';
+import type { CommunicationLog } from '../../schema/communicationLog';
+import type { QSLReceive, QSLSend } from '../../schema/qsl';
 import {
 	formatCreateAddressInputErrors,
 	formatCreateCommunicationLogInputErrors,
@@ -22,11 +23,12 @@ import {
 	findAddressByCallsign,
 	findLatestQSLReceiveByCallsign,
 	findLatestQSLSendByCallsign,
+	selectQSLSendById,
 } from './select';
 
 export class QSLSendNotFoundError extends Error {
-	constructor(callsign: string) {
-		super(`No QSL send record found for callsign: ${callsign}`);
+	constructor(id: number) {
+		super(`No QSL send record found for id: ${id}`);
 		this.name = 'QSLSendNotFoundError';
 	}
 }
@@ -89,10 +91,13 @@ export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend>
 	}
 
 	await ready;
+	let qslSendId: number;
 	await run('BEGIN');
 	try {
-		const qslSendId = await runAndGetId(
-			'INSERT INTO qsl_sends (callsign, sent_at, confirmed_at) VALUES (?, ?, NULL)',
+		qslSendId = await runAndGetId(
+			`INSERT INTO qsl_sends (
+				callsign, sent_at, confirmed_at, status, tracking_number
+			) VALUES (?, ?, NULL, NULL, NULL)`,
 			[normalizedInput.callsign, normalizedInput.sentAt]
 		);
 		await run(
@@ -106,7 +111,7 @@ export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend>
 		await run('ROLLBACK');
 		throw error;
 	}
-	return { ...normalizedInput, confirmedAt: null };
+	return { id: qslSendId, ...normalizedInput, confirmedAt: null, status: null, trackingNumber: null };
 }
 
 export async function insertQSLReceive(input: CreateQSLReceiveInput): Promise<QSLReceive> {
@@ -120,9 +125,10 @@ export async function insertQSLReceive(input: CreateQSLReceiveInput): Promise<QS
 	}
 
 	await ready;
+	let qslReceiveId: number;
 	await run('BEGIN');
 	try {
-		const qslReceiveId = await runAndGetId(
+		qslReceiveId = await runAndGetId(
 			'INSERT INTO qsl_receives (callsign, received_at) VALUES (?, ?)',
 			[normalizedInput.callsign, normalizedInput.receivedAt]
 		);
@@ -137,33 +143,32 @@ export async function insertQSLReceive(input: CreateQSLReceiveInput): Promise<QS
 		await run('ROLLBACK');
 		throw error;
 	}
-	return normalizedInput;
+	return { id: qslReceiveId, ...normalizedInput };
 }
 
-export async function confirmLatestQSLSend(input: ConfirmQSLSendInput): Promise<QSLSend> {
-	const normalizedInput: ConfirmQSLSendInput = {
-		...input,
-		callsign: normalizeCallsign(input.callsign),
-	};
-
-	if (!validateConfirmQSLSendInput(normalizedInput)) {
+export async function confirmQSLSend(input: ConfirmQSLSendInput): Promise<QSLSend> {
+	if (!validateConfirmQSLSendInput(input)) {
 		throw new Error(`Invalid QSL send confirmation input: ${formatDateInputErrors(validateConfirmQSLSendInput.errors, 'confirmedAt')}`);
 	}
 
 	await ready;
-	const qslSend = await findLatestQSLSendByCallsign(normalizedInput.callsign);
-	if (qslSend === undefined) {
-		throw new QSLSendNotFoundError(normalizedInput.callsign);
+	const qslSend = await selectQSLSendById(input.id);
+	if (qslSend === null) {
+		throw new QSLSendNotFoundError(input.id);
 	}
 
-	await run('UPDATE qsl_sends SET confirmed_at = ? WHERE id = ?', [
-		normalizedInput.confirmedAt,
-		qslSend.id,
+	await run('UPDATE qsl_sends SET confirmed_at = ?, status = ? WHERE id = ?', [
+		input.confirmedAt,
+		input.status,
+		input.id,
 	]);
 	return {
+		id: qslSend.id,
 		callsign: qslSend.callsign,
 		sentAt: qslSend.sentAt,
-		confirmedAt: normalizedInput.confirmedAt,
+		confirmedAt: input.confirmedAt,
+		status: input.status,
+		trackingNumber: qslSend.trackingNumber,
 	};
 }
 

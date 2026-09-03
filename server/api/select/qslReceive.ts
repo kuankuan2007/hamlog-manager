@@ -1,5 +1,6 @@
 import Router from '@kuankuan/k-server';
 import {
+  selectQSLReceiveById,
   selectQSLReceives,
   selectQSLReceivesByCallsign,
   selectQSLReceivesByCallsigns,
@@ -8,6 +9,10 @@ import {
 function getCallsign(pathname: string): string {
   const callsign = pathname.match(/^\/api\/select\/qsl-receive\/([^/]+)$/)?.[1];
   return decodeURIComponent(callsign ?? '');
+}
+
+function getId(pathname: string): number {
+  return Number(pathname.match(/^\/api\/select\/qsl-receive\/id\/(\d+)$/)?.[1]);
 }
 
 export const SelectQSLReceivesRouter = new Router({
@@ -24,6 +29,14 @@ export const SelectQSLReceivesByCallsignsRouter = new Router({
   onRootMatch: async (request, _response, ctx) => {
     const callsigns = request.ourl.searchParams.get('callsign')?.split(',') ?? [];
     ctx.data = await selectQSLReceivesByCallsigns(callsigns);
+  },
+});
+
+export const SelectQSLReceiveByIdRouter = new Router({
+  matcher: (pathname) => /^\/qsl-receive\/id\/\d+$/.test(pathname),
+  name: 'qsl-receive-by-id',
+  onRootMatch: async (request, _response, ctx) => {
+    ctx.data = await selectQSLReceiveById(getId(request.ourl.pathname));
   },
 });
 

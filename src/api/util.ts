@@ -10,13 +10,14 @@ export async function getData<T>(response: Promise<Response> | Response): Promis
   }
   const body = (await _response.json()) as ServerResponse<T>;
   if (!body.ok) {
-    throw new Error(errorMessageFromResponse(body.code, body.message));
+    throw new Error(errorMessageFromResponse(body.code, body.msg));
   }
-  return body.data;
+  return body.data as T;
 }
 export async function sendData<T>(url: string, data: T) {
   const _response = await fetch(url, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!_response.ok) {
@@ -24,6 +25,6 @@ export async function sendData<T>(url: string, data: T) {
   }
   const body = (await _response.json()) as ServerResponse<T>;
   if (!body.ok) {
-    throw new Error(errorMessageFromResponse(body.code, body.message));
+    throw new Error(errorMessageFromResponse(body.code, body.msg));
   }
 }

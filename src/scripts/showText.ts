@@ -9,6 +9,8 @@ const showText: Record<string, string> = {
   recipientName: '收件人',
   sentAt: '发送时间',
   confirmedAt: '确认时间',
+  status: '状态',
+  trackingNumber: '物流单号',
   receivedAt: '接收时间',
   frequency: '频率',
   mode: '模式',

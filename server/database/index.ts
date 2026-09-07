@@ -5,6 +5,10 @@ const databasePath = resolve(process.cwd(), 'data/logbook.db');
 
 export const database = new sqlite3.Database(databasePath);
 
+process.on('exit', () => {
+	database.close();
+});
+
 export function run(sql: string, parameters: unknown[] = []): Promise<void> {
 	return new Promise((resolvePromise, reject) => {
 		database.run(sql, parameters, (error) => (error ? reject(error) : resolvePromise()));

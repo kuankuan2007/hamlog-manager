@@ -62,10 +62,21 @@
             </tbody>
           </table>
         </div>
-        <p v-else>暂无地址信息，<a class="new-address-button" :href="`/new-address?callsign=${callsign}`" target="_blank">新增地址</a></p>
+        <p v-else>
+          暂无地址信息，<a
+            class="new-address-button"
+            :href="`/new-address?callsign=${callsign}`"
+            target="_blank"
+            >新增地址</a
+          >
+        </p>
       </div>
       <div class="qsl-info" id="qsl">
         <h2>QSL收发信息</h2>
+        <p>
+          <a class="button-link" :href="`/new-qsl-send?callsign=${callsign}`" target="_blank">新增QSL发送</a
+          ><a class="button-link" :href="`/new-qsl-receive?callsign=${callsign}`" target="_blank">新增QSL接收</a>
+        </p>
         <div class="qsl-send" id="qsl-send">
           <h3>QSL发送</h3>
           <table v-if="detail.qslSends && detail.qslSends.length">
@@ -246,16 +257,29 @@ watch(
   cursor: pointer;
 }
 a.new-address-button {
-    padding: 0.2em 0.5em;
-    border-radius: 4px;
-    border: 1px solid;
-    background-color: transparent;
-    margin-left: 0.5em;
-    text-decoration: none;
-    font-size: 1em;
-    @include theme.use {
-      color: theme.mix('color', 'active-color', 50%);
-      border-color: theme.mix('color', 'active-color', 50%);
-    }
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
+  border: 1px solid;
+  background-color: transparent;
+  margin-left: 0.5em;
+  text-decoration: none;
+  font-size: 1em;
+  @include theme.use {
+    color: theme.mix('color', 'active-color', 50%);
+    border-color: theme.mix('color', 'active-color', 50%);
   }
+}
+a {
+  padding: 0.2em 0.5em;
+  border: 1px solid;
+  border-radius: 4px;
+  background: transparent;
+  text-decoration: none;
+  font-size: 1em;
+  margin-right: 0.75em;
+  @include theme.use {
+    color: theme.mix('color', 'active-color', 50%);
+    border-color: theme.mix('color', 'active-color', 50%);
+  }
+}
 </style>

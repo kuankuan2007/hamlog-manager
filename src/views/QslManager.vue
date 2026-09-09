@@ -27,7 +27,7 @@
             <tr v-for="record in qslSends" :key="record.id">
               <td>{{ record.id }}</td>
               <td>
-                  {{ record.callsign }}
+                {{ record.callsign }}
               </td>
               <td>{{ record.sentAt }}</td>
               <td>{{ record.confirmedAt ?? '—' }}</td>
@@ -73,17 +73,143 @@
       </div>
       <p v-else-if="!loading">暂无 QSL 收件记录</p>
     </section>
+    <section>
+      <h2>未发送QSL列表</h2>
+      <div v-if="unsentQSLLogs.length">
+        <p>
+          <a
+            :href="`/address-print?callsigns=${encodeURIComponent(unsentQSLLogs.map((log) => log.callsign).join(','))}`"
+            target="_blank"
+            >打印地址</a
+          >
+        </p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>呼号</th>
+                <th>通联时间</th>
+                <th>频率</th>
+                <th>收报</th>
+                <th>发报</th>
+                <th>类型</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="record in unsentQSLLogs" :key="record.id">
+                <td>
+                  <RouterLink :to="`/callsign/${encodeURIComponent(record.callsign)}`">
+                    {{ record.callsign }}
+                  </RouterLink>
+                </td>
+                <td>{{ record.time }}</td>
+                <td>{{ record.frequency }}</td>
+                <td>{{ record.rxReport }}</td>
+                <td>{{ record.txReport }}</td>
+                <td>{{ formatUnsentType(record.reason) }}</td>
+                <td>
+                  <a
+                    :href="`/new-qsl-send?callsign=${encodeURIComponent(record.callsign)}`"
+                    target="_blank"
+                    >新增发件</a
+                  >|<a
+                    :href="`/edit-address?callsign=${encodeURIComponent(record.callsign)}`"
+                    target="_blank"
+                    >编辑地址</a
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <p v-else-if="!loading">暂无未发送 QSL 的通联记录</p>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { selectQSLReceives, selectQSLSends } from '@/api/select';
+import {
+  selectCommunicationLogsByCallsign,
+  selectQSLReceives,
+  selectQSLSends,
+  selectUnsentQSLCommunicationLogs,
+} from '@/api/select';
+import type { CommunicationLog } from '@schema/communicationLog';
 import type { QSLReceive, QSLSend, QSLSendStatus } from '@schema/qsl';
+
+type UnsentQSLLogReason = 'unsent' | 'returned';
+
+interface UnsentQSLLogRow extends CommunicationLog {
+  reason: UnsentQSLLogReason;
+}
 
 const qslSends = ref<QSLSend[]>([]);
 const qslReceives = ref<QSLReceive[]>([]);
+const unsentQSLLogs = ref<UnsentQSLLogRow[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+
+function byNewestTimeDesc(a: UnsentQSLLogRow, b: UnsentQSLLogRow): number {
+  return b.time.localeCompare(a.time);
+}
+
+function formatUnsentType(reason: UnsentQSLLogReason): string {
+  return reason === 'returned' ? '被退回' : '未发送';
+}
+
+async function loadUnsentQSLLogs(qslSendRecords: QSLSend[]): Promise<UnsentQSLLogRow[]> {
+  const unsentLogs = await selectUnsentQSLCommunicationLogs();
+  const latestSendByCallsign = new Map<string, QSLSend>();
+  const sortedSends = [...qslSendRecords].sort((a, b) => {
+    const sentAtCompare = b.sentAt.localeCompare(a.sentAt);
+    if (sentAtCompare !== 0) return sentAtCompare;
+    return b.id - a.id;
+  });
+  for (const record of sortedSends) {
+    if (!latestSendByCallsign.has(record.callsign)) {
+      latestSendByCallsign.set(record.callsign, record);
+    }
+  }
+  const returnedCallsigns = [...latestSendByCallsign.values()]
+    .filter((record) => record.status === 'returned')
+    .map((record) => record.callsign);
+
+  const unsentRows: UnsentQSLLogRow[] = unsentLogs.map((record) => ({
+    ...record,
+    reason: 'unsent',
+  }));
+
+  if (returnedCallsigns.length === 0) {
+    return unsentRows.sort(byNewestTimeDesc);
+  }
+
+  const returnedLogs = await Promise.all(
+    returnedCallsigns.map((callsign) => selectCommunicationLogsByCallsign(callsign))
+  );
+
+  const latestReturnedLogs = returnedLogs
+    .map((records) => records.find((record) => record.hasAddress))
+    .filter((record): record is CommunicationLog => record !== undefined)
+    .map((record) => ({
+      ...record,
+      reason: 'returned' as const,
+    }));
+
+  const merged = new Map<string, UnsentQSLLogRow>();
+  for (const record of unsentRows) {
+    merged.set(record.callsign, record);
+  }
+  for (const record of latestReturnedLogs) {
+    const existing = merged.get(record.callsign);
+    if (!existing || record.reason === 'returned' || record.time > existing.time) {
+      merged.set(record.callsign, record);
+    }
+  }
+
+  return [...merged.values()].sort(byNewestTimeDesc);
+}
 
 function formatStatus(status: QSLSendStatus | null): string {
   if (status === 'received') return '已收到';
@@ -95,10 +221,13 @@ async function loadRecords() {
   loading.value = true;
   error.value = null;
   try {
-    [qslSends.value, qslReceives.value] = await Promise.all([
+    const [qslSendRecords, qslReceiveRecords] = await Promise.all([
       selectQSLSends(),
       selectQSLReceives(),
     ]);
+    qslSends.value = qslSendRecords;
+    qslReceives.value = qslReceiveRecords;
+    unsentQSLLogs.value = await loadUnsentQSLLogs(qslSendRecords);
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : String(reason);
   } finally {
@@ -113,7 +242,7 @@ loadRecords();
 .box {
   padding: 1em;
 }
-header{
+header {
   a {
     padding: 0.2em 0.5em;
     border: 1px solid;
@@ -135,5 +264,4 @@ section {
 .table-wrapper {
   overflow-x: auto;
 }
-
 </style>

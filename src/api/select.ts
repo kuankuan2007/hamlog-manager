@@ -48,11 +48,72 @@ export async function selectCommunicationLogs(
   );
 }
 
+export async function selectCommunicationLogsByCallsign(
+  callsign: string
+): Promise<CommunicationLog[]> {
+  return await getData<CommunicationLog[]>(
+    fetch(`/api/select/communication-log/${encodeURIComponent(callsign)}`)
+  );
+}
+
+export async function selectUnsentQSLCommunicationLogs(): Promise<CommunicationLog[]> {
+  const pageSize = 500;
+  const filters: CommunicationLogFilters = {
+    qslSent: false,
+    hasAddress: true,
+    deduplicateCallsigns: true,
+  };
+
+  const firstPage = await selectCommunicationLogs(1, pageSize, filters);
+  const items = [...firstPage.items];
+  const totalPages = Math.ceil(firstPage.total / pageSize);
+
+  for (let page = 2; page <= totalPages; page += 1) {
+    const result = await selectCommunicationLogs(page, pageSize, filters);
+    items.push(...result.items);
+  }
+
+  return items;
+}
+
 export async function selectAddressesByCallsigns(callsigns: string[]): Promise<Address[]> {
   if (callsigns.length === 0) return [];
 
   const params = new URLSearchParams({ callsign: callsigns.join(',') });
   return await getData<Address[]>(fetch(`/api/select/address-query?${params.toString()}`));
+}
+
+export async function selectAddressByCallsign(callsign: string): Promise<Address | null> {
+  return await getData<Address | null>(
+    fetch(`/api/select/address/${encodeURIComponent(callsign)}`)
+  );
+}
+
+export async function selectAddresses(
+  page: number = 1,
+  pageSize: number = 100
+): Promise<PaginatedResult<Address>> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+  });
+  return await getData<PaginatedResult<Address>>(
+    fetch(`/api/select/address?${params.toString()}`)
+  );
+}
+
+export async function selectAllAddresses(): Promise<Address[]> {
+  const pageSize = 500;
+  const firstPage = await selectAddresses(1, pageSize);
+  const items = [...firstPage.items];
+  const totalPages = Math.ceil(firstPage.total / pageSize);
+
+  for (let page = 2; page <= totalPages; page += 1) {
+    const result = await selectAddresses(page, pageSize);
+    items.push(...result.items);
+  }
+
+  return items;
 }
 
 export async function selectQSLSends(): Promise<QSLSend[]> {

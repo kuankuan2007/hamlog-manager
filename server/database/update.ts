@@ -92,13 +92,14 @@ export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend>
 
 	await ready;
 	let qslSendId: number;
+	const trackingNumber = normalizedInput.trackingNumber?.trim() || null;
 	await run('BEGIN');
 	try {
 		qslSendId = await runAndGetId(
 			`INSERT INTO qsl_sends (
 				callsign, sent_at, confirmed_at, status, tracking_number
-			) VALUES (?, ?, NULL, NULL, NULL)`,
-			[normalizedInput.callsign, normalizedInput.sentAt]
+			) VALUES (?, ?, NULL, NULL, ?)`,
+			[normalizedInput.callsign, normalizedInput.sentAt, trackingNumber]
 		);
 		await run(
 			`UPDATE communication_logs
@@ -111,7 +112,14 @@ export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend>
 		await run('ROLLBACK');
 		throw error;
 	}
-	return { id: qslSendId, ...normalizedInput, confirmedAt: null, status: null, trackingNumber: null };
+	return {
+		id: qslSendId,
+		callsign: normalizedInput.callsign,
+		sentAt: normalizedInput.sentAt,
+		confirmedAt: null,
+		status: null,
+		trackingNumber,
+	};
 }
 
 export async function insertQSLReceive(input: CreateQSLReceiveInput): Promise<QSLReceive> {

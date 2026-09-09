@@ -74,8 +74,11 @@
       <div class="qsl-info" id="qsl">
         <h2>QSL收发信息</h2>
         <p>
-          <a class="button-link" :href="`/new-qsl-send?callsign=${callsign}`" target="_blank">新增QSL发送</a
-          ><a class="button-link" :href="`/new-qsl-receive?callsign=${callsign}`" target="_blank">新增QSL接收</a>
+          <a class="button-link" :href="`/new-qsl-send?callsign=${callsign}`" target="_blank"
+            >新增QSL发送</a
+          ><a class="button-link" :href="`/new-qsl-receive?callsign=${callsign}`" target="_blank"
+            >新增QSL接收</a
+          >
         </p>
         <div class="qsl-send" id="qsl-send">
           <h3>QSL发送</h3>
@@ -117,6 +120,7 @@
                 <th>ID</th>
                 <th>{{ getShowText('callsign') }}</th>
                 <th>{{ getShowText('receivedAt') }}</th>
+                <th>Send Email</th>
               </tr>
             </thead>
             <tbody>
@@ -124,6 +128,13 @@
                 <td>{{ record.id }}</td>
                 <td>{{ record.callsign }}</td>
                 <td>{{ record.receivedAt }}</td>
+                <td>
+                  <a
+                    :href="`/send-email?title=${encodeURIComponent(`您的QSL卡片已收妥`)}&to=${encodeURIComponent(emailInfo?.email ?? '')}&content=${encodeURIComponent(createQSLReceivedConfirmMailContent({ callsign: record.callsign, qslReceivedDate: record.receivedAt, qslSendDate: detail.qslSends[0]?.sentAt }))}`"
+                    target="_blank"
+                    >发送邮件</a
+                  >
+                </td>
               </tr>
             </tbody>
           </table>
@@ -177,6 +188,7 @@ import { callsign2email } from '@/api/auto';
 import { selectCallsignDetail, type CallsignDetail } from '@/api/select';
 import type { Callsign2EmailResponse } from '@/api/schema';
 import getShowText from '@/scripts/showText';
+import { createQSLReceivedConfirmMailContent } from '@/scripts/mailContent';
 
 const detail = ref<CallsignDetail | null>(null);
 const props = defineProps<{

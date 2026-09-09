@@ -4,6 +4,7 @@
     <form @submit.prevent="submitForm">
       <p>呼号：<input v-model="callsign" type="text" name="callsign" required /></p>
       <p>发送日期：<input v-model="sentAt" type="date" name="sentAt" required /></p>
+      <p>快递单号：<input v-model="trackingNumber" type="text" name="trackingNumber" /></p>
       <p><button type="submit" :disabled="submitting">{{ submitting ? '提交中' : '提交' }}</button></p>
     </form>
   </div>
@@ -19,12 +20,14 @@ const props = defineProps<{
 
 const callsign = ref(props.callsign ?? '');
 const sentAt = ref(getCurrentTimeTagString().slice(0, 10));
+const trackingNumber = ref('');
 const submitting = ref(false);
 
 async function submitForm() {
   const options: CreateQSLSendInput = {
     callsign: callsign.value,
     sentAt: sentAt.value,
+    trackingNumber: trackingNumber.value.trim() || undefined,
   };
 
   submitting.value = true;

@@ -18,6 +18,7 @@ export interface QSLReceive {
 export interface CreateQSLSendInput {
   callsign: string;
   sentAt: string;
+  trackingNumber?: string;
 }
 
 export interface CreateQSLReceiveInput {
@@ -69,6 +70,7 @@ export const CreateQSLSendInputSchema = {
   properties: {
     ...QSLInputProperties,
     sentAt: DateSchema,
+    trackingNumber: { type: 'string' },
   },
   required: ['callsign', 'sentAt'],
 };

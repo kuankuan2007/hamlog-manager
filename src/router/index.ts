@@ -42,6 +42,9 @@ const router = createRouter({
       meta: {
         title: '地址打印',
       },
+      props: (route) => ({
+        callsigns: getCallsignQuery(route.query.callsigns),
+      }),
     },
     {
       path: '/callsign/:callsign',
@@ -84,6 +87,25 @@ const router = createRouter({
       },
     },
     {
+      path: '/edit-address',
+      name: 'edit-address',
+      component: () => import('@/views/EditAddress.vue'),
+      props: (route) => ({
+        callsign: getCallsignQuery(route.query.callsign),
+      }),
+      meta: {
+        title: '编辑地址',
+      },
+    },
+    {
+      path: '/address-list',
+      name: 'address-list',
+      component: () => import('@/views/AddressList.vue'),
+      meta: {
+        title: '地址列表',
+      },
+    },
+    {
       path: '/new-qsl-send',
       name: 'new-qsl-send',
       component: () => import('@/views/NewQSLSend.vue'),
@@ -123,7 +145,19 @@ const router = createRouter({
       meta: {
         title: 'QSL 管理',
       },
-    },
+    }, {
+      path: '/send-email',
+      name: 'send-email',
+      component: () => import('@/views/SendEmail.vue'),
+      meta: {
+        title: '发送邮件',
+      },
+      props: (route) => ({
+        title: route.query.title,
+        to: route.query.to,
+        content: route.query.content,
+      }),
+    }
   ],
 });
 

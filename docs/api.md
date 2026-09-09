@@ -75,6 +75,12 @@ API 默认监听 `http://localhost:3000`，所有业务路由以 `/api` 开头�
 GET /api/select/communication-log?page=1&pageSize=20&qslSent=false&hasAddress=true&deduplicateCallsigns=true
 ```
 
+查询“未发送 QSL 且按呼号去重”的通联可直接使用：
+
+```text
+GET /api/select/communication-log?page=1&pageSize=100&qslSent=false&deduplicateCallsigns=true
+```
+
 ### 按呼号查询
 
 `GET /api/select/communication-log/{callsign}` 返回 `CommunicationLog[]`，按时间和 ID 倒序。呼号路径段需要 URL 编码；服务端转换为大写。

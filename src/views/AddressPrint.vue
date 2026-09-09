@@ -1,5 +1,6 @@
 <template>
   <div class="address-box">
+    <p v-if="error">{{ error }}</p>
     <ol class="address-list">
       <li v-for="address in printData" :key="address.callsign" class="address-item">
         <p class="postal-code">{{ address.postalCode }}</p>
@@ -14,32 +15,21 @@
 </template>
 <script setup lang="ts">
 import type { Address } from '@schema/address';
-import { selectAddressesByCallsigns, selectCommunicationLogs } from '@/api/select';
+import { selectAddressesByCallsigns } from '@/api/select';
 
-const pageSize = 100;
+const props = defineProps<{
+  callsigns: string;
+}>();
+const error = ref<string>();
+const callsignList = props.callsigns.split(',').map((callsign) => callsign.trim());
 const printData = ref<Address[]>([]);
 
 async function loadPrintData(): Promise<void> {
-  const filters = {
-    qslSent: false,
-    hasAddress: true,
-    deduplicateCallsigns: true,
-  };
-  const firstPage = await selectCommunicationLogs(1, pageSize, filters);
-  const pageCount = Math.ceil(firstPage.total / pageSize);
-  const remainingPages = await Promise.all(
-    Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) =>
-      selectCommunicationLogs(index + 2, pageSize, filters)
-    )
-  );
-  const callsigns = firstPage.items
-    .concat(...remainingPages.map((page) => page.items))
-    .map((log) => log.callsign);
-  printData.value = await selectAddressesByCallsigns(callsigns);
+  printData.value = await selectAddressesByCallsigns(callsignList);
 }
-
 loadPrintData().catch((error) => {
   console.error('Error fetching print addresses:', error);
+  error.value = error.message;
 });
 </script>
 <style scoped lang="scss">

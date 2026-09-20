@@ -164,7 +164,13 @@ erDiagram
 
 ## 迁移边界
 
-当前迁移可以从旧版本增量更新到版本 6，但不能从全空 SQLite 文件创建所有核心表。版本 4 为 `qsl_sends` 增加可空的 `status` 和 `tracking_number`；版本 5 为 `callsign_email_cache.email` 增加大小写不敏感唯一索引，并在建索引前按邮箱去重，仅保留最新记录；版本 6 重建外键仍指向 `qsl_sends_legacy` 的旧 `communication_logs` 表，使外键改指 `qsl_sends` 并将失效关联置 `NULL`。`callsign_email_cache` 是唯一由现有迁移完整创建的业务表，其他核心表必须已存在。备份和部署时应把数据库文件视为必要运行资产。
+当前迁移可以从旧版本增量更新到版本 6，但不能从全空 SQLite 文件创建所有核心表；全新部署应使用服务端 `--init` 启动参数创建数据库文件（见下文“初始化与重建”）。版本 4 为 `qsl_sends` 增加可空的 `status` 和 `tracking_number`；版本 5 为 `callsign_email_cache.email` 增加大小写不敏感唯一索引，并在建索引前按邮箱去重，仅保留最新记录；版本 6 重建外键仍指向 `qsl_sends_legacy` 的旧 `communication_logs` 表，使外键改指 `qsl_sends` 并将失效关联置 `NULL`。`callsign_email_cache` 是唯一由现有迁移完整创建的业务表，其他核心表必须已存在。备份和部署既有数据时仍应把数据库文件视为必要运行资产。
+
+## 初始化与重建
+
+全新部署使用服务端 `--init` 启动参数（见 [服务端](server.md)）从零创建 `data/logbook.db`：服务端在执行迁移等常规启动步骤之前，先按本文档的完整结构创建数据库文件，包含全部核心表、全部索引、WAL 日志模式和 `PRAGMA user_version = 6`。若 `data/logbook.db` 已存在，`--init` 输出警告日志并被忽略，不会对现有数据库做任何改动。
+
+数据库相关启动步骤（`--init` 创建、迁移、检查点、维护动作）失败时，服务端输出 fatal 级错误和 warn 级提示后以非零码退出。若失败原因是数据库文件损坏或表结构不正确，应先备份 `data/logbook.db` 及伴随的 `logbook.db-shm`、`logbook.db-wal` 文件，再删除这三个文件，并附带 `--init` 重新启动以重建正确的表结构。重建得到的是空数据库，原数据库中的全部数据都会丢弃，是否仍可从备份文件恢复数据应先行评估。
 
 ## 维护建议
 

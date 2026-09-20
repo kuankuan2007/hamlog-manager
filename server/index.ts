@@ -1,8 +1,10 @@
 import { createServer } from '@kuankuan/k-server';
 import { ConsoleRecorder, Level } from '@kuankuan/log-control';
+import { existsSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import ApiRouter from './api';
-import { checkpointDatabase, ready } from './database';
+import { checkpointDatabase, closeDatabase, databasePath, initializeDatabase } from './database';
+import { createInitialDatabase } from './database/init';
 import {
   maintainCommunicationLogForeignKeys,
   maintainCommunicationLogSequenceNumbers,
@@ -27,6 +29,7 @@ async function startServer(): Promise<void> {
   const { values } = parseArgs({
     options: {
       fix: { type: 'boolean', default: false },
+      init: { type: 'boolean', default: false },
       'maintain-sequence-numbers': { type: 'boolean', default: false },
       'no-checkpoint': { type: 'boolean', default: false },
       host: { type: 'string' },
@@ -39,36 +42,59 @@ async function startServer(): Promise<void> {
   const host = values.host?.trim() || undefined;
   const port = values.port === undefined ? 3000 : parsePort(values.port);
 
-  await ready;
+  try {
+    if (values.init) {
+      if (existsSync(databasePath)) {
+        launchLogger.warn(
+          `Database file ${databasePath} already exists; ignoring --init`,
+        );
+      } else {
+        launchLogger.info('Creating initial database file...');
+        await createInitialDatabase();
+        launchLogger.info('Initial database file created');
+      }
+    }
 
-  launchLogger.info('Database is ready');
+    await initializeDatabase();
 
-  if (!values['no-checkpoint']) {
-    launchLogger.debug('Checkpointing database...');
-    await checkpointDatabase();
-  }
+    launchLogger.info('Database is ready');
 
-  if (values.fix) {
-    launchLogger.info('Fixing communication log foreign keys...');
-    const repairedForeignKeys = await maintainCommunicationLogForeignKeys();
-    console.log(
-      `Communication log foreign key maintenance completed; repaired ${repairedForeignKeys} rows`,
+    if (!values['no-checkpoint']) {
+      launchLogger.debug('Checkpointing database...');
+      await checkpointDatabase();
+    }
+
+    if (values.fix) {
+      launchLogger.info('Fixing communication log foreign keys...');
+      const repairedForeignKeys = await maintainCommunicationLogForeignKeys();
+      console.log(
+        `Communication log foreign key maintenance completed; repaired ${repairedForeignKeys} rows`,
+      );
+      launchLogger.info('Foreign key maintenance completed');
+    }
+
+    if (values['maintain-sequence-numbers']) {
+      launchLogger.info('Maintaining communication log sequence numbers...');
+      const repairedSequenceNumbers = await maintainCommunicationLogSequenceNumbers();
+      console.log(
+        `Communication log sequence number maintenance completed; repaired ${repairedSequenceNumbers} rows`,
+      );
+      launchLogger.info('Sequence number maintenance completed');
+    }
+
+    if (!values['no-checkpoint']) {
+      launchLogger.debug('Checkpointing database...');
+      await checkpointDatabase();
+    }
+  } catch (error) {
+    launchLogger.fatal(
+      `Database startup failed: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
     );
-    launchLogger.info('Foreign key maintenance completed');
-  }
-
-  if (values['maintain-sequence-numbers']) {
-    launchLogger.info('Maintaining communication log sequence numbers...');
-    const repairedSequenceNumbers = await maintainCommunicationLogSequenceNumbers();
-    console.log(
-      `Communication log sequence number maintenance completed; repaired ${repairedSequenceNumbers} rows`,
+    launchLogger.warn(
+      `If ${databasePath} is corrupted or has an invalid schema, back up the file (together with any -wal/-shm files), delete them, and start again with --init to recreate the correct schema; rebuilding discards all data stored in the database`,
     );
-    launchLogger.info('Sequence number maintenance completed');
-  }
-
-  if (!values['no-checkpoint']) {
-    launchLogger.debug('Checkpointing database...');
-    await checkpointDatabase();
+    await closeDatabase();
+    throw error;
   }
 
   const onListening = () => {

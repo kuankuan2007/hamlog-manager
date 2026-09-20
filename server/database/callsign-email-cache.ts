@@ -1,4 +1,4 @@
-import { get, normalizeCallsign, ready, run } from './index';
+import { get, normalizeCallsign, run } from './index';
 
 export interface CallsignEmailCache {
 	callsign: string;
@@ -35,7 +35,6 @@ async function selectLatestCallsignEmailCacheRow(
 export async function selectLatestCallsignEmailCache(
 	callsign: string
 ): Promise<CallsignEmailCache | null> {
-	await ready;
 	const cache = await selectLatestCallsignEmailCacheRow(callsign);
 	if (cache === undefined) return null;
 	return {
@@ -49,7 +48,6 @@ export async function selectLatestCallsignEmailCache(
 export async function selectLatestCallsignByEmail(
 	email: string
 ): Promise<CallsignEmailCache | null> {
-	await ready;
 	const normalizedEmail = normalizeEmail(email);
 	const cache = await get<CallsignEmailCacheRow>(
 		`SELECT id, callsign, email, updated_at AS updatedAt, provider
@@ -76,7 +74,6 @@ export async function insertCallsignEmailCache(
 		callsign: normalizeCallsign(cache.callsign),
 		email: normalizeEmail(cache.email),
 	};
-	await ready;
 	const latestCache = await selectLatestCallsignEmailCacheRow(
 		normalizedCache.callsign,
 		normalizedCache.provider

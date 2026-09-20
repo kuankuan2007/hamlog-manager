@@ -18,6 +18,7 @@ pnpm server-start
 | --- | --- |
 | `--host {地址}` | 指定监听地址（如 `127.0.0.1`）；缺省监听所有网络接口 |
 | `--port {端口}` | 指定监听端口，缺省 `3000`；必须是 `0..65535` 的整数，非法值启动失败 |
+| `--init` | 全新部署时使用：`data/logbook.db` 不存在则在启动前创建包含完整版本 6 结构的数据库文件；文件已存在时输出警告日志并忽略该参数 |
 | `--fix` | 监听端口前修复全部通联外键，将其重新指向该呼号当前的地址与最新 QSL 收发记录（不存在时置 `NULL`），并输出修复行数 |
 | `--maintain-sequence-numbers` | 监听端口前校验并修复全部通联记录序号 |
 | `--no-checkpoint` | 跳过两次 WAL 检查点 |
@@ -25,6 +26,7 @@ pnpm server-start
 ```text
 pnpm server-start -- --host 127.0.0.1 --port 8080
 pnpm server-start -- --maintain-sequence-numbers
+pnpm server-start -- --init
 ```
 
 启动错误会写入标准错误，并设置非零退出码。
@@ -75,7 +77,7 @@ SMTP 配置必须显式填写 `host` 和 `port` 字段，程序不会自行推�
 
 ## 数据库初始化与迁移
 
-数据库模块在导入时打开连接。`ready` Promise 依次执行：
+数据库模块不再在导入时打开连接。服务端在 `startServer` 中解析完启动参数（含 `--init` 的新库创建）后，手动调用 `initializeDatabase()` 并等待完成，之后才执行检查点、维护和监听。`initializeDatabase()` 依次执行：
 
 1. `PRAGMA foreign_keys = ON`；
 2. 开始即时事务并执行可重复迁移；
@@ -88,7 +90,7 @@ SMTP 配置必须显式填写 `host` 和 `port` 字段，程序不会自行推�
 9. 提交事务；
 10. 确保呼号、时间、频率组合索引存在。
 
-迁移只补充当前版本所需结构，并不能从空数据库创建全部核心业务表。部署或恢复时仍需提供含 `communication_logs`、`addresses`、`qsl_sends`、`qsl_receives` 的数据库文件。实际结构见 [数据库](database.md)。
+迁移只补充当前版本所需结构，并不能从空数据库创建全部核心业务表。全新部署应使用 `--init` 创建包含 `communication_logs`、`addresses`、`qsl_sends`、`qsl_receives`、`callsign_email_cache` 及全部索引的数据库文件；恢复既有数据时仍需直接提供数据库文件。实际结构见 [数据库](database.md)。
 
 ## 读取行为
 
@@ -141,3 +143,5 @@ SMTP 配置必须显式填写 `host` 和 `port` 字段，程序不会自行推�
 ## 日志与错误
 
 服务注册控制台日志记录器，起始级别为 Info。业务输入错误通过统一状态对象返回；未被路由处理的数据库、JSON 解析或外部查询异常由框架错误处理流程接管。调用方不应假设所有失败都使用 HTTP 非 2xx；还必须检查响应体的 `ok`。
+
+数据库相关启动步骤（`--init` 创建、迁移、检查点、维护动作）失败时，服务端在退出前输出 fatal 级错误（含堆栈）和 warn 级提示：若失败原因是数据库文件损坏或表结构不正确，可在备份 `data/logbook.db` 及伴随的 `-wal`/`-shm` 文件后将其删除，再附带 `--init` 重新启动以重建正确的表结构（见 [数据库](database.md) 的“初始化与重建”）。

@@ -1,4 +1,4 @@
-import { all, get, normalizeCallsign, ready } from './index';
+import { all, get, normalizeCallsign } from './index';
 import type { Address } from '@schema/address';
 import type { CallsignDetail, CommunicationLog, CommunicationLogBasic, CommunicationLogSearchBasic, CommunicationLogSearchResult } from '@schema/communicationLog';
 import type { QSLReceive, QSLSend } from '@schema/qsl';
@@ -151,7 +151,6 @@ export async function selectCommunicationLogs(
 	pageSize = 100,
 	filters: CommunicationLogFilters = {}
 ): Promise<PaginatedResult<CommunicationLog>> {
-	await ready;
 	const pagination = getPagination(page, pageSize);
 	const filterQuery = getCommunicationLogFilterQuery(filters);
 	const [rows, count] = await Promise.all([
@@ -173,7 +172,6 @@ export async function selectCommunicationLogs(
 export async function selectCommunicationLogBasicsByCallsign(
 	callsign: string
 ): Promise<CommunicationLogBasic[]> {
-	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	return all<CommunicationLogBasic>(
 		`SELECT substr(time, 1, 10) AS date, callsign, frequency
@@ -187,7 +185,6 @@ export async function selectCommunicationLogBasicsByCallsign(
 export async function searchCommunicationLogBasics(
 	query: string
 ): Promise<CommunicationLogSearchResult[]> {
-	await ready;
 	const normalizedQuery = normalizeCallsign(query);
 	if (normalizedQuery.length === 0) return [];
 
@@ -235,7 +232,6 @@ export async function searchCommunicationLogBasics(
 }
 
 export async function selectCommunicationLogsByCallsign(callsign: string): Promise<CommunicationLog[]> {
-	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	const rows = await all<CommunicationLogRow>(
 		`SELECT ${communicationLogColumns}
@@ -248,7 +244,6 @@ export async function selectCommunicationLogsByCallsign(callsign: string): Promi
 }
 
 export async function selectCommunicationLogById(id: number): Promise<CommunicationLog | null> {
-	await ready;
 	const row = await get<CommunicationLogRow>(
 		`SELECT ${communicationLogColumns}
 		 FROM communication_logs AS log
@@ -262,7 +257,6 @@ export async function selectAddresses(
 	page = 1,
 	pageSize = 100
 ): Promise<PaginatedResult<Address>> {
-	await ready;
 	const pagination = getPagination(page, pageSize);
 	const [items, count] = await Promise.all([
 		all<Address>(
@@ -280,7 +274,6 @@ export async function selectAddresses(
 }
 
 export async function selectAddressByCallsign(callsign: string): Promise<Address | null> {
-	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	const address = await get<Address>(
 		`SELECT callsign, postal_code AS postalCode, address,
@@ -293,7 +286,6 @@ export async function selectAddressByCallsign(callsign: string): Promise<Address
 }
 
 export async function selectAddressesByCallsigns(callsigns: string[]): Promise<Address[]> {
-	await ready;
 	const normalizedCallsigns = normalizeCallsigns(callsigns);
 	if (normalizedCallsigns.length === 0) return [];
 
@@ -308,14 +300,12 @@ export async function selectAddressesByCallsigns(callsigns: string[]): Promise<A
 }
 
 export async function selectQSLReceives(): Promise<QSLReceive[]> {
-	await ready;
 	return all<QSLReceive>(
 		'SELECT id, callsign, received_at AS receivedAt FROM qsl_receives ORDER BY received_at DESC, id DESC'
 	);
 }
 
 export async function selectQSLReceiveById(id: number): Promise<QSLReceive | null> {
-	await ready;
 	const qslReceive = await get<QSLReceive>(
 		'SELECT id, callsign, received_at AS receivedAt FROM qsl_receives WHERE id = ?',
 		[id]
@@ -324,7 +314,6 @@ export async function selectQSLReceiveById(id: number): Promise<QSLReceive | nul
 }
 
 export async function selectQSLReceivesByCallsign(callsign: string): Promise<QSLReceive[]> {
-	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	return all<QSLReceive>(
 		`SELECT id, callsign, received_at AS receivedAt
@@ -336,7 +325,6 @@ export async function selectQSLReceivesByCallsign(callsign: string): Promise<QSL
 }
 
 export async function selectQSLReceivesByCallsigns(callsigns: string[]): Promise<QSLReceive[]> {
-	await ready;
 	const normalizedCallsigns = normalizeCallsigns(callsigns);
 	if (normalizedCallsigns.length === 0) return [];
 
@@ -350,7 +338,6 @@ export async function selectQSLReceivesByCallsigns(callsigns: string[]): Promise
 }
 
 export async function selectQSLSends(): Promise<QSLSend[]> {
-	await ready;
 	return all<QSLSend>(
 		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt,
 				status, tracking_number AS trackingNumber
@@ -360,7 +347,6 @@ export async function selectQSLSends(): Promise<QSLSend[]> {
 }
 
 export async function selectQSLSendById(id: number): Promise<QSLSend | null> {
-	await ready;
 	const qslSend = await get<QSLSend>(
 		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt,
 				status, tracking_number AS trackingNumber
@@ -372,7 +358,6 @@ export async function selectQSLSendById(id: number): Promise<QSLSend | null> {
 }
 
 export async function selectQSLSendsByCallsign(callsign: string): Promise<QSLSend[]> {
-	await ready;
 	const normalizedCallsign = normalizeCallsign(callsign);
 	return all<QSLSend>(
 		`SELECT id, callsign, sent_at AS sentAt, confirmed_at AS confirmedAt,
@@ -385,7 +370,6 @@ export async function selectQSLSendsByCallsign(callsign: string): Promise<QSLSen
 }
 
 export async function selectQSLSendsByCallsigns(callsigns: string[]): Promise<QSLSend[]> {
-	await ready;
 	const normalizedCallsigns = normalizeCallsigns(callsigns);
 	if (normalizedCallsigns.length === 0) return [];
 

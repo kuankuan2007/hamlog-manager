@@ -66,7 +66,15 @@ cp config/values.template.ts config/values.ts   # Windows PowerShell: Copy-Item 
 
 ### 4. 准备数据库
 
-`data/logbook.db` 是**必要运行资产**，不随仓库分发。启动时的迁移只做增量升级（当前 `user_version = 6`），**不能从空文件创建全部核心表**——数据库需已包含 `communication_logs`、`addresses`、`qsl_sends`、`qsl_receives` 四张核心表。`data/` 目录同样被 git 忽略，写入前建议备份（`data/backups/` 可用于保存副本）。
+`data/logbook.db` 不随仓库分发。全新部署时附带 `--init` 启动一次，创建包含完整当前结构（全部核心表与索引、WAL 模式、`user_version = 6`）的空数据库：
+
+```bash
+pnpm server-start -- --init
+```
+
+若 `data/logbook.db` 已存在，`--init` 会输出警告日志并被忽略，不会改动现有数据库。迁移旧环境时直接把既有数据库文件放到 `data/logbook.db`；启动时的迁移只做增量升级（当前 `user_version = 6`），**不能从空文件创建全部核心表**。`data/` 目录被 git 忽略，写入前建议备份（`data/backups/` 可用于保存副本）。
+
+如果数据库文件损坏或表结构不正确，启动会失败，服务端输出 fatal 级错误和 warn 级提示。此时先备份 `data/logbook.db` 及伴随的 `-wal`/`-shm` 文件，再将其删除，并附带 `--init` 重新启动以重建正确的表结构——重建得到的是空数据库，原库中全部数据都会丢弃。
 
 ### 5. 启动
 
@@ -93,6 +101,7 @@ Vite 会把 `/api` 代理到 `http://localhost:3000`，浏览器访问 Vite 输�
 | `pnpm lint` | 运行 ESLint |
 | `pnpm server-build` | 将服务端构建到 `server-dist/` |
 | `pnpm server-start` | 构建并启动 API 服务 |
+| `pnpm server-start -- --init` | 全新部署时创建空数据库（文件已存在则警告并忽略） |
 | `pnpm server-start -- --maintain-sequence-numbers` | 启动前校验并修复通联展示序号 |
 
 ## 页面一览

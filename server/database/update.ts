@@ -18,7 +18,7 @@ import {
 	validateCreateQSLReceiveInput,
 	validateCreateQSLSendInput,
 } from '../schema';
-import { get, normalizeCallsign, ready, run, runAndGetId } from './index';
+import { get, normalizeCallsign, run, runAndGetId } from './index';
 import {
 	findAddressByCallsign,
 	findLatestQSLReceiveByCallsign,
@@ -45,7 +45,6 @@ export async function upsertAddress(input: CreateAddressInput): Promise<Address>
 		);
 	}
 
-	await ready;
 	await run('BEGIN');
 	try {
 		await run(
@@ -90,7 +89,6 @@ export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend>
 		throw new Error(`Invalid QSL send input: ${formatDateInputErrors(validateCreateQSLSendInput.errors, 'sentAt')}`);
 	}
 
-	await ready;
 	let qslSendId: number;
 	const trackingNumber = normalizedInput.trackingNumber?.trim() || null;
 	await run('BEGIN');
@@ -132,7 +130,6 @@ export async function insertQSLReceive(input: CreateQSLReceiveInput): Promise<QS
 		throw new Error(`Invalid QSL receive input: ${formatDateInputErrors(validateCreateQSLReceiveInput.errors, 'receivedAt')}`);
 	}
 
-	await ready;
 	let qslReceiveId: number;
 	await run('BEGIN');
 	try {
@@ -159,7 +156,6 @@ export async function confirmQSLSend(input: ConfirmQSLSendInput): Promise<QSLSen
 		throw new Error(`Invalid QSL send confirmation input: ${formatDateInputErrors(validateConfirmQSLSendInput.errors, 'confirmedAt')}`);
 	}
 
-	await ready;
 	const qslSend = await selectQSLSendById(input.id);
 	if (qslSend === null) {
 		throw new QSLSendNotFoundError(input.id);
@@ -194,7 +190,6 @@ export async function insertCommunicationLog(
 		);
 	}
 
-	await ready;
 	await run('BEGIN IMMEDIATE');
 
 	try {

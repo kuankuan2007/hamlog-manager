@@ -1,23 +1,31 @@
 import { resolve } from 'node:path';
 import sqlite3 from 'sqlite3';
 
-const databasePath = resolve(process.cwd(), 'data/logbook.db');
+export const databasePath = resolve(process.cwd(), 'data/logbook.db');
 
-export const database = new sqlite3.Database(databasePath);
+let database: sqlite3.Database | undefined;
 
 process.on('exit', () => {
-	database.close();
+	database?.close(() => undefined);
 });
+
+function getDatabase(): sqlite3.Database {
+	if (database === undefined) {
+		throw new Error('Database has not been initialized');
+	}
+
+	return database;
+}
 
 export function run(sql: string, parameters: unknown[] = []): Promise<void> {
 	return new Promise((resolvePromise, reject) => {
-		database.run(sql, parameters, (error) => (error ? reject(error) : resolvePromise()));
+		getDatabase().run(sql, parameters, (error) => (error ? reject(error) : resolvePromise()));
 	});
 }
 
 export function runAndGetId(sql: string, parameters: unknown[] = []): Promise<number> {
 	return new Promise((resolvePromise, reject) => {
-		database.run(sql, parameters, function onRun(error) {
+		getDatabase().run(sql, parameters, function onRun(error) {
 			if (error) {
 				reject(error);
 				return;
@@ -30,7 +38,7 @@ export function runAndGetId(sql: string, parameters: unknown[] = []): Promise<nu
 
 export function all<T>(sql: string, parameters: unknown[] = []): Promise<T[]> {
 	return new Promise((resolvePromise, reject) => {
-		database.all(sql, parameters, (error, rows) => {
+		getDatabase().all(sql, parameters, (error, rows) => {
 			if (error) reject(error);
 			else resolvePromise(rows as T[]);
 		});
@@ -39,7 +47,7 @@ export function all<T>(sql: string, parameters: unknown[] = []): Promise<T[]> {
 
 export function get<T>(sql: string, parameters: unknown[] = []): Promise<T | undefined> {
 	return new Promise((resolvePromise, reject) => {
-		database.get(sql, parameters, (error, row) => {
+		getDatabase().get(sql, parameters, (error, row) => {
 			if (error) reject(error);
 			else resolvePromise(row as T | undefined);
 		});
@@ -258,9 +266,30 @@ async function migrateDatabase(): Promise<void> {
 	}
 }
 
-export const ready = run('PRAGMA foreign_keys = ON')
-	.then(migrateDatabase)
-	.then(() => run(`
-		CREATE INDEX IF NOT EXISTS idx_communication_logs_callsign_time_frequency
-		ON communication_logs(callsign, time, frequency)
-	`));
+export function initializeDatabase(): Promise<void> {
+	if (database !== undefined) {
+		return Promise.reject(new Error('Database has already been initialized'));
+	}
+
+	const instance = new sqlite3.Database(databasePath);
+	database = instance;
+
+	return run('PRAGMA foreign_keys = ON')
+		.then(migrateDatabase)
+		.then(() => run(`
+			CREATE INDEX IF NOT EXISTS idx_communication_logs_callsign_time_frequency
+			ON communication_logs(callsign, time, frequency)
+		`));
+}
+
+export function closeDatabase(): Promise<void> {
+	const instance = database;
+	if (instance === undefined) {
+		return Promise.resolve();
+	}
+
+	database = undefined;
+	return new Promise((resolvePromise) => {
+		instance.close(() => resolvePromise());
+	});
+}

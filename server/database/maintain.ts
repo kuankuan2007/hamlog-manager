@@ -1,4 +1,4 @@
-import { all, get, ready, run } from './index';
+import { all, get, run } from './index';
 
 interface SequenceNumberState {
 	mismatchedRows: number;
@@ -22,7 +22,6 @@ interface ForeignKeyMaintenanceRow {
  * @returns The number of rows whose sequence number was inconsistent.
  */
 export async function maintainCommunicationLogSequenceNumbers(): Promise<number> {
-	await ready;
 	await run('BEGIN IMMEDIATE');
 
 	try {
@@ -81,7 +80,6 @@ export async function maintainCommunicationLogSequenceNumbers(): Promise<number>
  * QSL receive is updated and counted as one fix.
  */
 export async function maintainCommunicationLogForeignKeys(): Promise<number> {
-	await ready;
 	await run('BEGIN IMMEDIATE');
 
 	try {

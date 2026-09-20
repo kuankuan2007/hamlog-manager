@@ -69,6 +69,14 @@ pnpm dev
 pnpm server-start
 ```
 
+首次运行且 `data/logbook.db` 不存在时，附带 `--init` 启动以创建包含完整当前结构的空数据库（文件已存在时输出警告日志并忽略该参数）：
+
+```text
+pnpm server-start -- --init
+```
+
+数据库初始化与损坏重建流程见 [数据库](database.md)，启动参数明细见 [服务端](server.md)。
+
 Vite 会把 `/api` 代理到 `http://localhost:3000`；若用 `--host` / `--port` 修改了服务端监听，需同步调整 Vite 代理目标。服务端监听与数据库路径未通过环境变量配置；本人信息、QRZ Cookie 和 SMTP 配置的实际值统一定义在 `config/values.ts`，类型声明与默认导出装配在 `config/index.ts`，前后端分别通过 `@config` 别名及 `src/config/`、`server/config/` 转发模块引用。
 
 ## 常用命令

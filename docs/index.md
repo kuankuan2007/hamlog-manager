@@ -29,7 +29,7 @@ Node.js 版本要求为 `^20.19.0 || >=22.12.0`，包管理器为 pnpm（版本�
 ```text
 hamlog-manager/
 ├─ docs/                 # 当前项目文档
-├─ config/               # 统一配置：类型与默认导出装配（index.ts）、注释模版（values.template.ts）、实际值（values.ts，git 忽略）
+├─ config/               # 统一配置：类型与默认导出装配（index.ts）、注释模版（values.template.ts）、实际值（values.ts，git 忽略）、邮件头像（photo.jpg，git 忽略）
 ├─ schema/               # 浏览器与服务端共享的类型和校验规则
 ├─ server/
 │  ├─ api/               # HTTP 路由
@@ -61,7 +61,7 @@ pnpm install
 pnpm dev
 ```
 
-首次运行前，复制 `config/values.template.ts` 为 `config/values.ts`，并按其中注释填写本人信息、QRZ Cookie 和 SMTP 配置；`config/values.ts` 含敏感值，已被 `.gitignore` 排除。
+首次运行前，复制 `config/values.template.ts` 为 `config/values.ts`，并按其中注释填写本人信息、QRZ Cookie 和 SMTP 配置；`config/values.ts` 含敏感值，已被 `.gitignore` 排除。邮件功能还依赖本地头像文件 `config/photo.jpg`（JPG），该文件同样不随仓库分发，需手动放置。
 
 `pnpm dev` 只启动 Vite 开发服务器。API 服务需在另一个终端运行：
 

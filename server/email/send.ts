@@ -16,6 +16,14 @@ interface ParsedEmailConfig {
   from: string;
 }
 
+function getPhotoPath(): string {
+  return resolve(process.cwd(), 'config', 'photo.jpg');
+}
+
+async function getPhotoDataUrl(): Promise<string> {
+  return `data:image/jpeg;base64,${(await fs.readFile(getPhotoPath())).toString('base64')}`;
+}
+
 function normalizeHostAndPort(config: SmtpConfig): { host: string; port?: number } {
   const host = config.host?.trim();
   if (!host) {
@@ -85,6 +93,7 @@ export async function renderEmailTemplate(input: SendEmailInput): Promise<string
     meta: {
       myCallsign: selfInfo.callsign,
       myEmail: selfInfo.email,
+      myPhoto: await getPhotoDataUrl(),
     }
   });
 }

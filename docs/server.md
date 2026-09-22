@@ -56,6 +56,7 @@ pnpm server-start -- --init
 | API 监听 | 默认所有网络接口的 `3000` 端口；可用 `--host` / `--port` 覆盖 |
 | 数据库 | 相对于进程工作目录的 `data/logbook.db` |
 | 统一配置 | `config/`：类型与默认导出装配在 `index.ts`，实际值在 `values.ts`，经 `@config` 别名导入 |
+| 邮件头像 | 相对于进程工作目录的 `config/photo.jpg`（JPG，本地文件） |
 | 邮件模板 | 相对于进程工作目录的 `server/email/template.ejs` |
 | QRZ 页面 | `https://www.qrz.com/db/{callsign}` |
 
@@ -69,11 +70,13 @@ interface AppConfig {
 }
 ```
 
-`config/values.ts` 属于本地敏感运行数据，已通过 `.gitignore` 单独排除，不应写入文档、日志或版本控制；带注释的模版 `config/values.template.ts` 纳入版本控制，新环境应复制为 `values.ts` 后填写。服务端通过转发模块 `server/config/index.ts`（`@server/config`）读取全部配置；前端通过 `src/config/index.ts`（`@/config`）只转发 `selfInfo`，SMTP 密码与 QRZ Cookie 不会进入生产构建产物。注意：Vite 开发服务器按源码模块提供文件，开发期间能访问开发服务器的网络同样能获取 `config/values.ts` 全文。
+`config/values.ts` 属于本地敏感运行数据，已通过 `.gitignore` 单独排除，不应写入文档、日志或版本控制；带注释的模版 `config/values.template.ts` 纳入版本控制，新环境应复制为 `values.ts` 后填写。服务端通过转发模块 `server/config/index.ts`（`@server/config`）读取全部配置；前端通过 `src/config/index.ts`（`@/config`）只转发 `selfInfo`，SMTP 密码与 QRZ Cookie 不会进入生产构建产物。邮件模板头像 `config/photo.jpg` 也是本地运行文件，不随仓库分发。注意：Vite 开发服务器按源码模块提供文件，开发期间能访问开发服务器的网络同样能获取 `config/values.ts` 全文。
 
 `selfInfo.emailAddresses` 是可选的键到邮箱映射（如 `SELF: '...'`）。`<>` 包裹的呼号（如 `<SELF>`）优先按该映射解析，反向查询命中映射中的邮箱时返回 `<>` 包裹的键名，来源标记为 `config`；没有该字段时退回缓存表。
 
 SMTP 配置必须显式填写 `host` 和 `port` 字段，程序不会自行推断主机名或端口。
+
+邮件预览和发送渲染时会读取 `config/photo.jpg`，并以内嵌 `data:image/jpeg;base64,...` 写入邮件 HTML；若文件缺失或不可读，相关接口会失败。
 
 ## 数据库初始化与迁移
 

@@ -292,6 +292,8 @@ export const selfInfo: SelfInfoConfig = {
 
 返回值中的 `html` 是经过 `server/email/template.ejs` 渲染后的完整 HTML 字符串，可直接用于前端预览或调试。渲染结果包含固定页脚（本人呼号来自 `config/values.ts` 的 `selfInfo.callsign`，并内嵌台标图片）。其 `to`、`cc`、`bcc`、`subject`、`body`、`contentType` 约束与发送接口一致。
 
+邮件模板渲染会读取 `config/photo.jpg`（JPG）并内嵌为头像图片；该文件缺失或不可读时，预览接口会返回失败。
+
 ## 邮件发送
 
 `POST /api/email/send`
@@ -341,6 +343,8 @@ export const email: SmtpConfig = {
 ```
 
 可选字段：`secure`、`from`。`host` 和 `port` 都必须直接配置在 `config/values.ts` 中，程序不会自行推断。
+
+发送时会复用同一套模板渲染逻辑，因此同样依赖 `config/photo.jpg`（JPG）可读。
 
 ## 写入
 

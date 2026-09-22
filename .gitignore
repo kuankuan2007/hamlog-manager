@@ -30,3 +30,4 @@ temp/
 *.tsbuildinfo
 /data/
 /config/values.ts
+/config/photo.jpg

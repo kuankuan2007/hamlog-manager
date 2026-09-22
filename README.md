@@ -64,7 +64,18 @@ cp config/values.template.ts config/values.ts   # Windows PowerShell: Copy-Item 
 
 `config/values.ts` 含敏感信息，已被 `.gitignore` 排除，切勿提交到版本控制。
 
-### 4. 准备数据库
+### 4. 准备邮件头像
+
+邮件模板会读取本地头像文件 `config/photo.jpg` 并以内嵌图片方式写入邮件 HTML。该文件不随仓库分发，首次使用请自行放置一张 JPG 图片：
+
+```bash
+# Windows PowerShell 示例（把你自己的头像复制到项目配置目录）
+Copy-Item C:\path\to\your\photo.jpg config\photo.jpg
+```
+
+若缺少该文件，邮件预览与发送会因无法读取头像而失败。
+
+### 5. 准备数据库
 
 `data/logbook.db` 不随仓库分发。全新部署时附带 `--init` 启动一次，创建包含完整当前结构（全部核心表与索引、WAL 模式、`user_version = 6`）的空数据库：
 
@@ -76,7 +87,7 @@ pnpm server-start -- --init
 
 如果数据库文件损坏或表结构不正确，启动会失败，服务端输出 fatal 级错误和 warn 级提示。此时先备份 `data/logbook.db` 及伴随的 `-wal`/`-shm` 文件，再将其删除，并附带 `--init` 重新启动以重建正确的表结构——重建得到的是空数据库，原库中全部数据都会丢弃。
 
-### 5. 启动
+### 6. 启动
 
 需要两个终端，均从项目根目录运行：
 
@@ -90,7 +101,7 @@ pnpm dev
 
 Vite 会把 `/api` 代理到 `http://localhost:3000`，浏览器访问 Vite 输出的地址即可。
 
-### 6. 常用命令
+### 7. 常用命令
 
 | 命令 | 作用 |
 | --- | --- |
@@ -127,7 +138,7 @@ Vite 会把 `/api` 代理到 `http://localhost:3000`，浏览器访问 Vite 输�
 ```text
 hamlog-manager/
 ├─ docs/                 # 项目文档（见下方文档索引）
-├─ config/               # 统一配置：类型与装配（index.ts）、注释模版（values.template.ts）、实际值（values.ts，git 忽略）
+├─ config/               # 统一配置：类型与装配（index.ts）、注释模版（values.template.ts）、实际值（values.ts，git 忽略）、邮件头像（photo.jpg，git 忽略）
 ├─ schema/               # 浏览器与服务端共享的类型和校验规则
 ├─ server/
 │  ├─ api/               # HTTP 路由
@@ -152,8 +163,9 @@ hamlog-manager/
 
 ## 配置体系
 
-- `config/index.ts`：类型声明（`AppConfig`/`SelfInfoConfig`/`SmtpConfig`）与默认导出装配，纳入版本控制。
+- `config/index.ts`：类型声明（`App`/`SelfInfoConfig`/`SmtpConfig`）与默认导出装配，纳入版本控制。
 - `config/values.ts`：实际配置值，被 `.gitignore` 单独排除；新环境从 `config/values.template.ts` 复制生成。
+- `config/photo.jpg`：邮件模板头像文件（JPG），由服务端在渲染邮件时读取并内嵌，不随仓库分发；新环境需手动放置。
 - 前后端通过 `@config` 别名及各自的转发模块引用：`server/config/index.ts` 转发全量配置，`src/config/index.ts` 只转发 `selfInfo`——SMTP 密码与 QRZ Cookie 不会进入前端生产构建产物。
 - 服务须从项目根目录启动（数据库、邮件模板等按工作目录解析）。
 - 注意：Vite 开发服务器监听 `0.0.0.0` 且按源码模块提供文件，开发期间能访问该服务的网络可获取 `config/values.ts` 全文；请在可信网络中开发。

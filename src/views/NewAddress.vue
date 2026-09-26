@@ -2,7 +2,7 @@
   <div class="box">
     <h1>新建地址</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号： <input type="text" id="callsign" name="callsign" required v-model="callsign" /></p>
+      <p>呼号： <KInputCallsign id="callsign" required v-model="callsign" /></p>
       <p>
         邮政编码：
         <input type="text" id="postalCode" name="postalCode" required v-model="postalCode" />
@@ -18,6 +18,7 @@
 </template>
 <script setup lang="ts">
 import { type CreateAddressRequest, newAddress } from '@/api/update';
+import KInputCallsign from '@/components/input/KInputCallsign.vue';
 
 const props = defineProps<{
   callsign?: string;

@@ -7,7 +7,7 @@
     <form v-if="callsign" @submit.prevent="submitForm">
       <p>
         呼号：
-        <input type="text" name="callsign" :value="callsign" readonly />
+        <KInputCallsign :model-value="callsign" readonly />
       </p>
       <p>
         邮政编码：
@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { selectAddressByCallsign } from '@/api/select';
 import { type CreateAddressRequest, newAddress } from '@/api/update';
+import KInputCallsign from '@/components/input/KInputCallsign.vue';
 
 const props = defineProps<{
   callsign?: string;

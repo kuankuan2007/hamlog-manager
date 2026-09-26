@@ -2,7 +2,7 @@
   <div class="box">
     <h1>新建日志</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号：<input type="text" name="callsign" v-model="callsign" required /></p>
+      <p>呼号：<k-input-callsign v-model="callsign" required /></p>
       <p>RS: 收<k-input-rs v-model="rxReport" />/ 发<k-input-rs v-model="txReport" /></p>
       <p>
         <k-input-time v-model="time" />
@@ -18,6 +18,7 @@ import KInputTime from '@/components/input/KInputTime.vue';
 import KInputRs from '@/components/input/KInputRs.vue';
 import KInputMode from '@/components/input/KInputMode.vue';
 import KInputFreq from '@/components/input/KInputFreq.vue';
+import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { getCurrentTimeTagString } from '@util/time';
 import type { RadioMode } from '@/types/data';
 import { type CreateCommunicationLogInput, newCommunicationLog } from '@/api/update';

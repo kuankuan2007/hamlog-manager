@@ -2,7 +2,7 @@
   <div class="box">
     <h1>新增 QSL 收件记录</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号：<input v-model="callsign" type="text" name="callsign" required /></p>
+      <p>呼号：<KInputCallsign v-model="callsign" required /></p>
       <p>收件日期：<input v-model="receivedAt" type="date" name="receivedAt" required /></p>
       <p>
         <button type="submit" :disabled="submitting">{{ submitting ? '提交中' : '提交' }}</button>
@@ -13,6 +13,7 @@
 
 <script setup lang="ts">
 import { type CreateQSLReceiveInput, newQSLReceive } from '@/api/update';
+import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { getCurrentTimeTagString } from '@util/time';
 
 const props = defineProps<{

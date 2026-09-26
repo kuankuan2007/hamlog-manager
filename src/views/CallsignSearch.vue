@@ -1,13 +1,15 @@
 <template>
   <div class="box">
     <h1>呼号搜索</h1>
-    <input type="text" v-model="searchContent" placeholder="输入呼号进行搜索" />
-    <a :href="`/new-log?callsign=${searchContent}`" class="new-log-button" target="_blank"
-      >新增通联记录</a
-    >
+    <p class="search-box">
+      <KInputCallsign v-model="searchContent" placeholder="输入呼号进行搜索" :enable-search="false" />
+      <a :href="`/new-log?callsign=${searchContent}`" class="new-log-button" target="_blank"
+        >新增通联记录</a
+      >
+    </p>
     <div class="result-box">
       <h2>搜索结果</h2>
-      <ul class="result-list" v-if="searchResult.length > 0">
+      <ul class="result-list" v-if="searchResult.length > 0" ref="resultListEle">
         <li v-for="item in searchResult" :key="item.callsign">
           <h3 class="callsign-data">{{ item.callsign }}</h3>
           <p>
@@ -30,60 +32,16 @@
 <script setup lang="ts">
 import { searchCallsign } from '@/api/select';
 import CommunicationLogBasicTable from '@/components/dataDisplay/CommunicationLogBasicTable.vue';
+import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { highlight } from '@/scripts/searchHighlight';
 import type { CommunicationLogSearchResult } from '@schema/communicationLog';
 
 const searchContent = ref('');
 const searchResult = ref<CommunicationLogSearchResult[]>([]);
-
-function getTextNodes(root: Node): Text[] {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      if (!(node instanceof Text)) return NodeFilter.FILTER_SKIP;
-      const value = node.nodeValue;
-      if (!value) return NodeFilter.FILTER_REJECT;
-      if (!value.trim()) return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  } as NodeFilter);
-
-  const res: Text[] = [];
-  let current = walker.nextNode();
-  while (current) {
-    res.push(current as Text);
-    current = walker.nextNode();
-  }
-  return res;
-}
-function highlightCallsign(query: string) {
-  CSS.highlights.clear();
-  if (!query) return;
-  const eles = document.querySelectorAll('.callsign-data');
-
-  const textNodes: Text[] = Array.from(eles)
-    .map((item) => getTextNodes(item))
-    .flat();
-  const value = query.toUpperCase();
-  const ranges: Range[] = [];
-  for (const i of textNodes) {
-    const text = i.textContent.toUpperCase();
-    const indices: number[] = [];
-    let now = 0;
-    while (now < text.length) {
-      const index = text.indexOf(value, now);
-      if (index === -1) break;
-      indices.push(index);
-      now = index + value.length;
-    }
-    ranges.push(
-      ...indices.map((index) => {
-        const range = document.createRange();
-        range.setStart(i, index);
-        range.setEnd(i, index + value.length);
-        return range;
-      })
-    );
-  }
-  CSS.highlights.set('search-results', new Highlight(...ranges));
+const resultListEle=useTemplateRef<HTMLUListElement>('resultListEle');
+function highlightCallsign(callsign: string) {
+  const elements = resultListEle.value?.querySelectorAll('.callsign-data') || [];
+  highlight(callsign, Array.from(elements), 'search-results');
 }
 
 let abortController: AbortController | null = null;
@@ -110,6 +68,10 @@ onUpdated(() => {
 });
 </script>
 <style scoped lang="scss">
+.search-box {
+  display: flex;
+  align-items: center;
+}
 .box {
   padding: 1em;
   a {

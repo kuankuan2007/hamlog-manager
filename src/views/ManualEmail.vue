@@ -4,7 +4,7 @@
     <form @submit.prevent="submitForm">
       <p>
         呼号：
-        <input v-model="callsignValue" type="text" required />
+        <KInputCallsign v-model="callsignValue" required />
       </p>
       <p>
         邮箱：
@@ -20,6 +20,7 @@
 
 <script setup lang="ts">
 import { manualUpdateEmail } from '@/api/update';
+import KInputCallsign from '@/components/input/KInputCallsign.vue';
 
 const props = defineProps<{
   callsign?: string;

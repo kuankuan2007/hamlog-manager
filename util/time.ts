@@ -29,6 +29,12 @@ export function plainDateTimeToTimeTagString(dt: Temporal.PlainDateTime): string
   return `${String(dt.year).padStart(4, '0')}-${pad2(dt.month)}-${pad2(dt.day)} ${pad2(dt.hour)}:${pad2(dt.minute)}`;
 }
 
+export function plainDateTimeToDateTagString(dt: Temporal.PlainDateTime): string {
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  return `${String(dt.year).padStart(4, '0')}-${pad2(dt.month)}-${pad2(dt.day)}`;
+}
+
+
 export function getCurrentTimeTagString(): string {
   const now = Temporal.Now.instant().toZonedDateTimeISO('UTC').toPlainDateTime();
   return plainDateTimeToTimeTagString(now);
@@ -54,4 +60,42 @@ export function datetimeLocalValueToPlainDateTime(
 
   const local = Temporal.PlainDateTime.from(value);
   return local.subtract({ hours: timeZoneOffsetHours });
+}
+
+export function getRelativeTimeString(
+  input: string | Temporal.PlainDateTime,
+  now: Temporal.PlainDateTime = Temporal.Now.instant().toZonedDateTimeISO('UTC').toPlainDateTime()
+): string | null {
+  const dt = typeof input === 'string' ? timeTagStringToPlainDateTime(input) : input;
+  const days = now.toPlainDate().until(dt.toPlainDate()).days;
+
+  switch (days) {
+    case 0:
+      return '今天';
+    case 1:
+      return '明天';
+    case -1:
+      return '昨天';
+  }
+
+  if (days >= 2 && days <= 7) {
+    return `${days}天后`;
+  }
+  if (days <= -2 && days >= -7) {
+    return `${-days}天前`;
+  }
+
+  return null;
+}
+
+export function tryToGetRelativeTimeString(
+  input: string | Temporal.PlainDateTime,
+  now: Temporal.PlainDateTime = Temporal.Now.instant().toZonedDateTimeISO('UTC').toPlainDateTime()
+): string {
+  return (
+    getRelativeTimeString(input, now) ??
+    plainDateTimeToDateTagString(
+      typeof input === 'string' ? timeTagStringToPlainDateTime(input) : input
+    )
+  );
 }

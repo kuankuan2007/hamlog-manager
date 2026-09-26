@@ -2,7 +2,7 @@
   <div class="box">
     <h1>新增 QSL 发件记录</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号：<input v-model="callsign" type="text" name="callsign" required /></p>
+      <p>呼号：<KInputCallsign v-model="callsign" required /></p>
       <p>发送日期：<input v-model="sentAt" type="date" name="sentAt" required /></p>
       <p>快递单号：<input v-model="trackingNumber" type="text" name="trackingNumber" /></p>
       <p>
@@ -14,6 +14,7 @@
 
 <script setup lang="ts">
 import { type CreateQSLSendInput, newQSLSend } from '@/api/update';
+import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { getCurrentTimeTagString } from '@util/time';
 
 const props = defineProps<{

@@ -24,6 +24,7 @@ export interface SmtpConfig {
   port?: number;
   secure?: boolean;
   from?: string;
+  fromName?: string;
 }
 
 export interface AppConfig {

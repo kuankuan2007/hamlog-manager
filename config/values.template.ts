@@ -45,4 +45,6 @@ export const email: SmtpConfig = {
   // secure: true,
   // 可选：发件人地址；缺省使用上面的 email 账号
   // from: 'you@example.com',
+  // 可选：收件人看到的发件人名称；缺省不显示名称，仅显示地址
+  // fromName: 'BG0AAA',
 };

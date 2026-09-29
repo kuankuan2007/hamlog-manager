@@ -14,6 +14,7 @@ interface ParsedEmailConfig {
   port: number;
   secure: boolean;
   from: string;
+  fromName?: string;
 }
 
 function getPhotoPath(): string {
@@ -63,6 +64,7 @@ function parseEmailConfig(config: SmtpConfig): ParsedEmailConfig {
   const secure = config.secure ?? (hostPort === 465 || config.port === 465);
   const port = hostPort ?? config.port ?? (secure ? 465 : 587);
   const from = config.from?.trim() || account;
+  const fromName = config.fromName?.trim() || undefined;
 
   return {
     account,
@@ -71,6 +73,7 @@ function parseEmailConfig(config: SmtpConfig): ParsedEmailConfig {
     port,
     secure,
     from,
+    fromName,
   };
 }
 
@@ -119,7 +122,7 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
   const htmlBody = await renderEmailTemplate(input);
 
   await transporter.sendMail({
-    from: config.from,
+    from: config.fromName ? { name: config.fromName, address: config.from } : config.from,
     to: normalizeRecipients(input.to, 'to').join(', '),
     cc: cc.join(', '),
     bcc: bcc.join(', '),

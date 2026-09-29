@@ -20,7 +20,7 @@ export type QSLReceivedConfirmMailContent = {
 export function createQSLReceivedConfirmMailContent(data: QSLReceivedConfirmMailContent) {
   return formatEmailContent(
     data.callsign,
-    `您寄送的QSL卡片已于${data.qslReceivedDate}日收到，${data.qslSendDate ? `您的卡片也已于${data.qslSendDate}日寄出，请注意查收。` : ''}非常荣幸与您换卡`
+    `您寄送的QSL卡片已于${data.qslReceivedDate}日收到，${data.qslSendDate ? `给您的卡片也已于${data.qslSendDate}日寄出，请注意查收。` : ''}非常荣幸与您换卡`
   );
 }
 
@@ -59,27 +59,27 @@ function createQslSendSection(qslSend: QSOConfirmMailContent['qslSend'], address
   }
   if (qslSend.status === 'returned' || qslSend.status === 'not_received') {
     const situation = qslSend.status === 'returned' ? '已被退回' : '经确认未被收到';
-    return `我于${qslSend.sentAt}寄出的QSL卡片${situation}，请确认收件信息是否有误，以及是否需要重新寄送。`;
+    return `给您的QSL卡片于${qslSend.sentAt}寄出，但${situation}，请确认收件信息是否有误，以及是否需要重新寄送。`;
   }
   if (qslSend.status === 'received') {
     return qslSend.confirmedAt
-      ? `我于${qslSend.sentAt}寄出的QSL卡片已于${qslSend.confirmedAt}日确认签收。`
-      : `我于${qslSend.sentAt}寄出的QSL卡片已确认签收。`;
+      ? `给您的QSL卡片于${qslSend.sentAt}寄出，已于${qslSend.confirmedAt}日确认签收。`
+      : `给您的QSL卡片于${qslSend.sentAt}寄出，已确认签收。`;
   }
-  return `我已于${qslSend.sentAt}寄出QSL卡片，请确认是否收到。`;
+  return `给您的QSL卡片于${qslSend.sentAt}寄出，请确认是否收到。`;
 }
 
 function createQslReceiveSection(qslReceive: QSOConfirmMailContent['qslReceive']): string {
   return qslReceive
     ? `您的QSL卡片已于${qslReceive.receivedAt}日收妥。`
-    : `我的QSL收件地址为：${qslReceivedAddress}`;
+    : `我的QSL收件地址为：\n${qslReceivedAddress}`;
 }
 
 export function createQSOConfirmMailContent(data: QSOConfirmMailContent) {
   return formatEmailContent(
     data.callsign,
     `有如下QSO信息与您确认：
-时间：${data.time}
+时间：${data.time} UTC
 频率：${data.frequency}MHz
 模式：${data.mode}
 信号报告：收 ${data.rst.rx} 发 ${data.rst.tx}

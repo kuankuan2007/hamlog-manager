@@ -184,8 +184,8 @@ GET /api/select/communication-log?page=1&pageSize=100&qslSent=false&deduplicateC
 | --- | --- |
 | `auto` | 优先缓存；未命中时实时查询 |
 | `cache` | 只读缓存；未命中返回 `email: null`、`realtime: false` |
-| `fallback` | 先实时查询；失败后尝试缓存 |
-| `realtime` | 只实时查询；失败返回 `email: null` |
+| `fallback` | 先实时查询；失败后尝试缓存（缓存命中也会带上实时判定的 `loginExpired`） |
+| `realtime` | 只实时查询；失败返回 `email: null`，登录失效时附带 `loginExpired: true` |
 
 返回示例：
 
@@ -201,6 +201,36 @@ GET /api/select/communication-log?page=1&pageSize=100&qslSent=false&deduplicateC
 ```
 
 `comeFrom` 和 `lastUpdate` 仅在有对应缓存/查询结果时出现。当前实时来源固定写为 `select:qrz.com`。实时查询依赖 `config/values.ts` 中的 `qrzCookie` 和 QRZ.com 页面结构。
+
+### 登录失效
+
+实时抓取失败时 `email` 为 `null`、`realtime` 为 `true`。若失败原因是 QRZ.com 登录会话失效（页面提示需要登录查看邮箱），响应额外携带 `loginExpired: true`，供前端提示更新 `qrzCookie`：
+
+```json
+{
+  "callsign": "JA1ABC",
+  "email": null,
+  "realtime": true,
+  "mode": "realtime",
+  "loginExpired": true
+}
+```
+
+`loginExpired` 只在“确实尝试了实时抓取且判定为登录失效”时为 `true`；缓存命中、`<>` 配置呼号、`cache` 模式未命中以及实时抓取成功时都不包含该字段（或为 `false`）。其他实时失败（页面结构变化、该呼号确无公开邮箱、解码出空邮箱等）同样返回 `email: null`，但不带 `loginExpired`。
+
+`fallback` 模式（前端“刷新”按钮使用）在实时失败后会退回缓存：若存在缓存邮箱，则返回缓存的 `email`/`comeFrom`/`lastUpdate`（`realtime` 为 `false`），并**仍携带**实时判定的 `loginExpired`，因此刷新时即使拿到旧缓存也能提示登录失效；没有可用缓存时 `email` 为 `null`。
+
+```json
+{
+  "callsign": "JA1ABC",
+  "email": "operator@example.com",
+  "comeFrom": "select:qrz.com",
+  "realtime": false,
+  "lastUpdate": "2026-08-22 08:30",
+  "mode": "fallback",
+  "loginExpired": true
+}
+```
 
 ### 特殊配置呼号
 

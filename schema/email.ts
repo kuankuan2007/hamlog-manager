@@ -61,6 +61,7 @@ export interface Callsign2EmailResponse {
   realtime: boolean;
   lastUpdate?: string;
   mode: Callsign2EmailMode;
+  loginExpired?: boolean;
 }
 
 export interface Email2CallsignResponse {

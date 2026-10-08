@@ -146,7 +146,7 @@ HTTP 响应使用 `ServerResponse<T>`：
 
 `Callsign2EmailMode` 可取：`auto`、`cache`、`fallback`、`realtime`。
 
-`Callsign2EmailResponse` 包含 `callsign`、`email`、`realtime`、`mode`，并可能包含 `comeFrom` 和 `lastUpdate`。当前实时抓取写入的来源为 `select:qrz.com`；类型本身允许数据库中存在其他来源字符串。
+`Callsign2EmailResponse` 包含 `callsign`、`email`、`realtime`、`mode`，并可能包含 `comeFrom`、`lastUpdate` 和 `loginExpired`。`loginExpired?: boolean` 仅在实时抓取判定 QRZ.com 登录会话失效时为 `true`，其余情况省略或为 `false`；`realtime`/`auto` 模式下此时 `email` 为 `null`、`realtime` 为 `true`，而 `fallback` 模式即使退回缓存命中（`email` 为缓存值、`realtime` 为 `false`）也会携带该标记。当前实时抓取写入的来源为 `select:qrz.com`；类型本身允许数据库中存在其他来源字符串。
 
 `Email2CallsignResponse` 包含 `email`、`callsign`，并可能包含 `comeFrom`、`realtime` 和 `lastUpdate`。
 

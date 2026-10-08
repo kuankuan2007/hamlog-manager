@@ -13,6 +13,7 @@
               <template v-else-if="getLookupState(item)?.email">{{
                 getLookupState(item)?.email
               }}</template>
+              <template v-else-if="getLookupState(item)?.loginExpired">登录已过期</template>
               <template v-else>未找到缓存邮箱</template>
               <template v-if="getLookupState(item)?.label">
                 （{{ getLookupState(item)?.label }}）
@@ -75,6 +76,7 @@ type CallsignLookupState = {
   label: string;
   loading: boolean;
   loaded: boolean;
+  loginExpired: boolean;
 };
 
 type EmailLookupState = {
@@ -140,6 +142,7 @@ function ensureLookupState(callsign: string): CallsignLookupState {
       label: '缓存',
       loading: false,
       loaded: false,
+      loginExpired: false,
     };
   }
   return lookupByCallsign[key];
@@ -292,10 +295,12 @@ async function resolveCallsign(value: string, forceRefresh: boolean): Promise<vo
     const response = await callsign2email(callsign, forceRefresh ? 'fallback' : 'cache');
     state.email = response.email;
     state.label = getLookupLabel(response);
+    state.loginExpired = response.loginExpired ?? false;
     state.loaded = true;
   } catch {
     state.email = null;
     state.label = forceRefresh ? '刷新失败' : '缓存';
+    state.loginExpired = false;
     state.loaded = true;
   } finally {
     state.loading = false;

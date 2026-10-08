@@ -13,6 +13,7 @@
       >
       <span v-else>无数据</span>
       <span class="email-tag">{{ emailSourceLabel }}</span>
+      <span class="email-tag login-expired" v-if="emailInfo?.loginExpired">登录失效</span>
       <button class="email-refresh-button" @click="refreshEmailInfo" type="button">刷新</button>
       <a class="update-email-button" :href="`/manual-email?callsign=${callsign}`" target="_blank"
         >手动更新邮箱</a
@@ -186,6 +187,12 @@ function copyEmail() {
   @include theme.use {
     border-color: theme.mix('color', 'background', 50%);
     color: theme.get('color');
+  }
+}
+.login-expired.email-tag {
+  @include theme.use {
+    background-color: theme.mix('background', 'strong-color', 50%);
+    border-color: theme.mix('background', 'strong-color', 50%);
   }
 }
 .email-refresh-button,

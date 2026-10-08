@@ -47,6 +47,8 @@ pnpm server-start -- --init
 
 路由按 `/api/select`、`/api/update`、`/api/auto`、`/api/email` 四组挂载。接口明细见 [HTTP API](api.md)。
 
+入口 `server/index.ts` 负责解析启动参数、初始化数据库并监听端口；`server/create.ts` 以模块单例导出 `@kuankuan/k-server` 服务实例（`createServer()`），`server/log.ts` 在导入时注册控制台日志记录器并导出 `createLogger`，二者被入口和各业务模块共享（见下文“日志与错误”）。
+
 ## 配置和运行时文件
 
 当前实现没有读取 `.env`、`process.env` 或 `import.meta.env`。以下值是固定约定：
@@ -133,18 +135,23 @@ SMTP 配置必须显式填写 `host` 和 `port` 字段，程序不会自行推�
 
 ## QRZ.com 邮箱查询
 
-外部查询使用 `config/values.ts` 中的 `qrzCookie` 请求 QRZ 呼号页面并解析邮箱。API 层提供缓存策略：
+外部查询使用 `config/values.ts` 中的 `qrzCookie` 请求 QRZ 呼号页面并解析邮箱。抓取函数 `server/auto/callsign2email.ts` 的 `callsign2email()` 返回可辨识联合 `Callsign2EmailResult`：成功为 `{ ok: true, email }`，失败为 `{ ok: false, reason }`，`reason` 取 `EmailError` 枚举——`LoginExpired` 表示页面提示需要登录查看邮箱（判定 Cookie 会话失效），`NoEmailFound` 表示页面未给出可解析邮箱或解码出空邮箱。API 层据此提供缓存策略：
 
 - 命中缓存时可不访问外部站点；
-- 实时查询成功后写入 `callsign_email_cache`；
+- 实时查询成功（`ok: true`）后写入 `callsign_email_cache`；
 - 同呼号、同来源的最新邮箱相同时仅刷新时间；
 - 实时失败时，`fallback` 模式可退回缓存；
+- 实时失败且判定为 `LoginExpired` 时，响应携带 `loginExpired: true` 供前端提示更新 `qrzCookie`：`realtime`/`auto` 模式下 `email` 为 `null`，`fallback` 模式即使退回缓存命中（`email` 为缓存值、`realtime` 为 `false`）也会保留该标记，避免登录失效被旧缓存掩盖；
 - `<>` 包裹的呼号永不触发外部查询，按 `config/values.ts` 中 `selfInfo.emailAddresses` 配置或缓存表解析。
 
-外部站点可用性、登录 Cookie 和页面结构都会影响查询结果。
+登录失效判定依赖 QRZ 页面中“Email … `https://www.qrz.com/login` … required to view”的提示文本（正则匹配，不区分大小写、跨行）。外部站点可用性、登录 Cookie 和页面结构都会影响查询与判定结果；页面改版或返回非登录类错误页时，登录失效可能被误判为普通的“未找到邮箱”。此外抓取未检查 HTTP 状态码，403/429/5xx 等错误页只要不含上述提示文本，也会归类为 `NoEmailFound` 而非错误。
 
 ## 日志与错误
 
-服务注册控制台日志记录器，起始级别为 Info。业务输入错误通过统一状态对象返回；未被路由处理的数据库、JSON 解析或外部查询异常由框架错误处理流程接管。调用方不应假设所有失败都使用 HTTP 非 2xx；还必须检查响应体的 `ok`。
+服务实例由 `server/create.ts` 以模块单例导出；`server/log.ts` 在导入时向 `server.logApplication` 注册控制台记录器（`ConsoleRecorder`，起始级别 Info）并导出 `createLogger(name)`，`server/index.ts` 与各业务模块统一经此创建命名日志器。当前命名日志器包括启动流程的 `launch`，以及外部查询的 `auto`（其子日志器 `auto/email` 记录 QRZ 邮箱抓取过程）。由于记录器在模块导入时注册，任何引入 `@server/log` 的模块都会触发该副作用；当前单一入口下只注册一次。
+
+需要注意：`auto/email` 的 Debug 日志只记录呼号与抓取阶段，不输出解析到的邮箱地址（避免个人数据进入日志）。QRZ 登录会话失效以 Error 级别记录（`Qrz.com login session expired`），会话失效期间每次实时抓取都会重复记录。
+
+业务输入错误通过统一状态对象返回；未被路由处理的数据库、JSON 解析或外部查询异常由框架错误处理流程接管。调用方不应假设所有失败都使用 HTTP 非 2xx；还必须检查响应体的 `ok`。
 
 数据库相关启动步骤（`--init` 创建、迁移、检查点、维护动作）失败时，服务端在退出前输出 fatal 级错误（含堆栈）和 warn 级提示：若失败原因是数据库文件损坏或表结构不正确，可在备份 `data/logbook.db` 及伴随的 `-wal`/`-shm` 文件后将其删除，再附带 `--init` 重新启动以重建正确的表结构（见 [数据库](database.md) 的“初始化与重建”）。

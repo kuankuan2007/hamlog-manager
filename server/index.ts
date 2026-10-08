@@ -1,5 +1,3 @@
-import { createServer } from '@kuankuan/k-server';
-import { ConsoleRecorder, Level } from '@kuankuan/log-control';
 import { existsSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import ApiRouter from './api';
@@ -10,9 +8,11 @@ import {
   maintainCommunicationLogSequenceNumbers,
 } from './database/maintain';
 
-const server = createServer();
+import { server } from './create';
+import { createLogger } from './log';
+
 server.routers.main.addRouter(ApiRouter);
-server.logApplication.addRecorder(new ConsoleRecorder({ startLevel: Level.Info }));
+
 
 function parsePort(value: string): number {
   const port = Number(value);
@@ -23,7 +23,7 @@ function parsePort(value: string): number {
 }
 
 async function startServer(): Promise<void> {
-  const launchLogger = server.logApplication.createLogger('launch');
+  const launchLogger = createLogger('launch');
   launchLogger.info('Server is starting...');
 
   const { values } = parseArgs({

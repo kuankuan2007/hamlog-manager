@@ -1,15 +1,12 @@
 import Router from '@kuankuan/k-server';
 import { invalidInputStatue } from '@server/api/status';
-import { callsign2email } from '@server/auto/callsign2email';
+import { callsign2email, EmailError } from '@server/auto/callsign2email';
 import {
   insertCallsignEmailCache,
   selectLatestCallsignEmailCache,
 } from '@server/database/callsign-email-cache';
 import { normalizeCallsign } from '@server/database';
-import {
-  isWrappedCallsign,
-  selectConfiguredEmailByCallsign,
-} from '@server/config/self-info';
+import { isWrappedCallsign, selectConfiguredEmailByCallsign } from '@server/config/self-info';
 import {
   callsign2EmailModes,
   type Callsign2EmailMode,
@@ -85,11 +82,11 @@ export const Callsign2EmailRouter = new Router({
       }
     }
 
-    const email = await callsign2email(normalizedCallsign);
-    if (email !== null) {
+    const result = await callsign2email(normalizedCallsign);
+    if (result.ok) {
       const cache = await insertCallsignEmailCache({
         callsign: normalizedCallsign,
-        email,
+        email: result.email,
         updatedAt: getCurrentTimeTagString(),
         provider: 'select:qrz.com',
       });
@@ -104,13 +101,21 @@ export const Callsign2EmailRouter = new Router({
       return;
     }
 
+    const loginExpired = result.reason === EmailError.LoginExpired;
+
     if (mode === 'fallback') {
       const cache = await selectLatestCallsignEmailCache(normalizedCallsign);
       if (cache !== null) {
-        ctx.data = toCachedResponse(mode, cache);
+        ctx.data = { ...toCachedResponse(mode, cache), loginExpired };
         return;
       }
     }
-    ctx.data = { callsign: normalizedCallsign, email: null, realtime: true, mode };
+    ctx.data = {
+      callsign: normalizedCallsign,
+      email: null,
+      realtime: true,
+      mode,
+      loginExpired,
+    };
   },
 });

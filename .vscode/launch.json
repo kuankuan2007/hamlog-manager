@@ -1,22 +1,35 @@
 {
-    // 使用 IntelliSense 了解相关属性。 
-    // 悬停以查看现有属性的描述。
-    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-
-
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "启动程序",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/server-dist/index.js",
-            "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
-        }
-    ]
+  // 使用 IntelliSense 了解相关属性。
+  // 悬停以查看现有属性的描述。
+  // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "inputs": [
+    {
+      "id": "serverPort",
+      "type": "promptString",
+      "description": "服务器端口",
+      "default": "3000"
+    }
+  ],
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "启动程序",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/server-dist/index.js",
+      "args": ["--port", "${input:serverPort}"],
+      "outFiles": ["${workspaceFolder}/**/*.js"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "编译并启动程序",
+      "preLaunchTask": "server-build",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/server-dist/index.js",
+      "args": ["--port", "${input:serverPort}"],
+      "outFiles": ["${workspaceFolder}/**/*.js"]
+    }
+  ]
 }

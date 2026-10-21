@@ -8,15 +8,17 @@
           <th>{{ getShowText('address') }}</th>
           <th>{{ getShowText('recipientName') }}</th>
           <th>{{ getShowText('updatedAt') }}</th>
+          <th>{{ getShowText('updatedBy') }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="record in records" :key="record.address + record.postalCode + record.updatedAt">
+        <tr v-for="record in records" :key="record.callsign + record.updatedBy">
           <td>{{ record.callsign }}</td>
           <td>{{ record.postalCode }}</td>
           <td>{{ record.address }}</td>
           <td>{{ record.recipientName ?? '—' }}</td>
           <td>{{ record.updatedAt }}</td>
+          <td>{{ formatUpdatedBy(record.updatedBy) }}</td>
         </tr>
       </tbody>
     </table>
@@ -26,6 +28,7 @@
 <script setup lang="ts">
 import type { Address } from '@schema/address';
 import getShowText from '@/scripts/showText';
+import { formatUpdatedBy } from '@/scripts/selfInfo';
 
 defineProps<{
   records: Address[];

@@ -4,6 +4,7 @@ export interface Address {
 	address: string;
 	recipientName?: string;
 	updatedAt: string;
+	updatedBy: string;
 }
 
 export interface CreateAddressInput {

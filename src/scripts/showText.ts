@@ -24,6 +24,7 @@ const showText: Record<string, string> = {
   sent: '发',
   qsl: 'QSL',
   updatedAt: '更新时间',
+  updatedBy: '提供者',
   summary: '摘要',
   time: '时间',
 };

@@ -21,7 +21,7 @@
 | `qslReceived` | `boolean` | 是否关联 QSL 收件记录 |
 | `qslSent` | `boolean` | 是否关联 QSL 发件记录 |
 
-后三个布尔值由 `communication_logs` 中对应外键是否为 `NULL` 计算，不代表联表返回了记录详情。
+`hasAddress` 由公共库中是否存在同呼号地址计算；`qslReceived` 与 `qslSent` 由个人库中对应外键是否为 `NULL` 计算，不代表返回关联记录详情。
 
 ### `Address`
 
@@ -32,6 +32,7 @@
 | `address` | `string` | 邮寄地址 |
 | `recipientName` | `string?` | 可选收件人 |
 | `updatedAt` | `string` | 更新日期 |
+| `updatedBy` | `string` | 提供者呼号；界面将当前客户端自己的呼号显示为 `<YOU>` |
 
 ### QSL 模型
 
@@ -146,8 +147,10 @@ HTTP 响应使用 `ServerResponse<T>`：
 
 `Callsign2EmailMode` 可取：`auto`、`cache`、`fallback`、`realtime`。
 
+缓存命中响应包含 `updatedBy`，表示缓存记录提供者；界面将当前客户端自己的呼号显示为 `<YOU>`。
+
 `Callsign2EmailResponse` 包含 `callsign`、`email`、`realtime`、`mode`，并可能包含 `comeFrom`、`lastUpdate` 和 `loginExpired`。`loginExpired?: boolean` 仅在实时抓取判定 QRZ.com 登录会话失效时为 `true`，其余情况省略或为 `false`；`realtime`/`auto` 模式下此时 `email` 为 `null`、`realtime` 为 `true`，而 `fallback` 模式即使退回缓存命中（`email` 为缓存值、`realtime` 为 `false`）也会携带该标记。当前实时抓取写入的来源为 `select:qrz.com`；类型本身允许数据库中存在其他来源字符串。
 
-`Email2CallsignResponse` 包含 `email`、`callsign`，并可能包含 `comeFrom`、`realtime` 和 `lastUpdate`。
+`Email2CallsignResponse` 包含 `email`、`callsign`，缓存命中时还包含 `updatedBy`，并可能包含 `comeFrom`、`realtime` 和 `lastUpdate`。界面将当前客户端自己的呼号显示为 `<YOU>`。
 
 `<>` 包裹的呼号（如 `<SELF>`）命中 `config/values.ts` 中 `selfInfo.emailAddresses` 配置时，两个方向的响应 `comeFrom` 均为 `config`、`realtime` 均为 `true`，且不含 `lastUpdate`；该配置来源不写入 `callsign_email_cache`。

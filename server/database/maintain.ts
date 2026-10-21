@@ -8,8 +8,6 @@ interface SequenceNumberState {
 
 interface ForeignKeyMaintenanceRow {
 	id: number;
-	addressId: number | null;
-	expectedAddressId: number | null;
 	qslSendId: number | null;
 	expectedQslSendId: number | null;
 	qslReceiveId: number | null;
@@ -86,14 +84,6 @@ export async function maintainCommunicationLogForeignKeys(): Promise<number> {
 		const rows = await all<ForeignKeyMaintenanceRow>(`
 			SELECT
 				log.id,
-				log.address_id AS addressId,
-				(
-					SELECT address.id
-					FROM addresses AS address
-					WHERE address.callsign = log.callsign
-					ORDER BY address.updated_at DESC, address.id DESC
-					LIMIT 1
-				) AS expectedAddressId,
 				log.qsl_send_id AS qslSendId,
 				(
 					SELECT qslSend.id
@@ -116,20 +106,18 @@ export async function maintainCommunicationLogForeignKeys(): Promise<number> {
 
 		let fixed = 0;
 		for (const row of rows) {
-			const addressNeedsUpdate = row.addressId !== row.expectedAddressId;
 			const qslSendNeedsUpdate = row.qslSendId !== row.expectedQslSendId;
 			const qslReceiveNeedsUpdate = row.qslReceiveId !== row.expectedQslReceiveId;
 
-			if (!addressNeedsUpdate && !qslSendNeedsUpdate && !qslReceiveNeedsUpdate) {
+			if (!qslSendNeedsUpdate && !qslReceiveNeedsUpdate) {
 				continue;
 			}
 
 			await run(
 				`UPDATE communication_logs
-				 SET address_id = ?, qsl_send_id = ?, qsl_receive_id = ?
+				 SET qsl_send_id = ?, qsl_receive_id = ?
 				 WHERE id = ?`,
 				[
-					row.expectedAddressId,
 					row.expectedQslSendId,
 					row.expectedQslReceiveId,
 					row.id,

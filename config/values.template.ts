@@ -4,6 +4,10 @@
 
 import type { SelfInfoConfig, SmtpConfig } from './index';
 
+// SQLite 数据库文件位置：相对路径以项目工作目录为基准。
+export const databasePath: string = './data/logbook.db';
+export const publicDatabasePath: string = './data/public.db';
+
 // 本人信息：用于地址打印、邮件正文与页脚，以及 <> 包裹特殊呼号的邮箱映射。
 export const selfInfo: SelfInfoConfig = {
   // QSL 收件地址，用于邮件内容和前端地址打印

@@ -1,10 +1,12 @@
-import { get, normalizeCallsign, run } from './index';
+import { normalizeCallsign, publicGet, publicRun } from './index';
+import { selfInfo } from '@server/config';
 
 export interface CallsignEmailCache {
 	callsign: string;
 	email: string;
 	updatedAt: string;
 	provider: string;
+	updatedBy: string;
 }
 
 interface CallsignEmailCacheRow extends CallsignEmailCache {
@@ -17,18 +19,23 @@ function normalizeEmail(email: string): string {
 
 async function selectLatestCallsignEmailCacheRow(
 	callsign: string,
-	provider?: string
+	provider?: string,
+	onlyOwnData = false
 ): Promise<CallsignEmailCacheRow | undefined> {
 	const providerFilter = provider === undefined ? '' : ' AND provider = ?';
-	return get<CallsignEmailCacheRow>(
-		`SELECT id, callsign, email, updated_at AS updatedAt, provider
+	const ownerFilter = onlyOwnData ? ' AND updated_by = ?' : '';
+	const parameters = [normalizeCallsign(callsign)];
+	if (provider !== undefined) parameters.push(provider);
+	if (onlyOwnData) parameters.push(normalizeCallsign(selfInfo.callsign));
+	parameters.push(normalizeCallsign(selfInfo.callsign));
+	return publicGet<CallsignEmailCacheRow>(
+		`SELECT id, callsign, email, updated_at AS updatedAt, provider,
+				updated_by AS updatedBy
 		 FROM callsign_email_cache
-		 WHERE callsign = ?${providerFilter}
-		 ORDER BY updated_at DESC, id DESC
+		 WHERE callsign = ?${providerFilter}${ownerFilter}
+		 ORDER BY (updated_by = ?) DESC, updated_at DESC, id DESC
 		 LIMIT 1`,
-		provider === undefined
-			? [normalizeCallsign(callsign)]
-			: [normalizeCallsign(callsign), provider]
+		parameters
 	);
 }
 
@@ -42,6 +49,7 @@ export async function selectLatestCallsignEmailCache(
 		email: cache.email,
 		updatedAt: cache.updatedAt,
 		provider: cache.provider,
+		updatedBy: cache.updatedBy,
 	};
 }
 
@@ -49,13 +57,14 @@ export async function selectLatestCallsignByEmail(
 	email: string
 ): Promise<CallsignEmailCache | null> {
 	const normalizedEmail = normalizeEmail(email);
-	const cache = await get<CallsignEmailCacheRow>(
-		`SELECT id, callsign, email, updated_at AS updatedAt, provider
+	const cache = await publicGet<CallsignEmailCacheRow>(
+		`SELECT id, callsign, email, updated_at AS updatedAt, provider,
+				updated_by AS updatedBy
 		 FROM callsign_email_cache
 		 WHERE email = ? COLLATE NOCASE
-		 ORDER BY updated_at DESC, id DESC
+		 ORDER BY (updated_by = ?) DESC, updated_at DESC, id DESC
 		 LIMIT 1`,
-		[normalizedEmail]
+		[normalizedEmail, normalizeCallsign(selfInfo.callsign)]
 	);
 	if (cache === undefined) return null;
 	return {
@@ -63,23 +72,26 @@ export async function selectLatestCallsignByEmail(
 		email: cache.email,
 		updatedAt: cache.updatedAt,
 		provider: cache.provider,
+		updatedBy: cache.updatedBy,
 	};
 }
 
 export async function insertCallsignEmailCache(
-	cache: CallsignEmailCache
+	cache: Omit<CallsignEmailCache, 'updatedBy'>
 ): Promise<CallsignEmailCache> {
 	const normalizedCache = {
 		...cache,
 		callsign: normalizeCallsign(cache.callsign),
 		email: normalizeEmail(cache.email),
+		updatedBy: normalizeCallsign(selfInfo.callsign),
 	};
 	const latestCache = await selectLatestCallsignEmailCacheRow(
 		normalizedCache.callsign,
-		normalizedCache.provider
+		normalizedCache.provider,
+		true
 	);
 	if (latestCache?.email === normalizedCache.email) {
-		await run('UPDATE callsign_email_cache SET updated_at = ? WHERE id = ?', [
+		await publicRun('UPDATE callsign_email_cache SET updated_at = ? WHERE id = ?', [
 			normalizedCache.updatedAt,
 			latestCache.id,
 		]);
@@ -88,32 +100,43 @@ export async function insertCallsignEmailCache(
 			email: latestCache.email,
 			updatedAt: normalizedCache.updatedAt,
 			provider: latestCache.provider,
+			updatedBy: latestCache.updatedBy,
 		};
 	}
-	const emailCache = await selectLatestCallsignByEmail(normalizedCache.email);
-	if (emailCache !== null) {
-		await run(
+	const emailCache = await publicGet<CallsignEmailCacheRow>(
+		`SELECT id, callsign, email, updated_at AS updatedAt, provider,
+				updated_by AS updatedBy
+		 FROM callsign_email_cache
+		 WHERE email = ? COLLATE NOCASE AND updated_by = ?
+		 ORDER BY updated_at DESC, id DESC
+		 LIMIT 1`,
+		[normalizedCache.email, normalizedCache.updatedBy]
+	);
+	if (emailCache !== undefined) {
+		await publicRun(
 			`UPDATE callsign_email_cache
-			 SET callsign = ?, email = ?, updated_at = ?, provider = ?
-			 WHERE email = ? COLLATE NOCASE`,
+			 SET callsign = ?, email = ?, updated_at = ?, provider = ?, updated_by = ?
+			 WHERE id = ?`,
 			[
 				normalizedCache.callsign,
 				normalizedCache.email,
 				normalizedCache.updatedAt,
 				normalizedCache.provider,
-				normalizedCache.email,
+				normalizedCache.updatedBy,
+				emailCache.id,
 			]
 		);
 		return normalizedCache;
 	}
-	await run(
-		`INSERT INTO callsign_email_cache (callsign, email, updated_at, provider)
-		 VALUES (?, ?, ?, ?)`,
+	await publicRun(
+		`INSERT INTO callsign_email_cache (callsign, email, updated_at, provider, updated_by)
+		 VALUES (?, ?, ?, ?, ?)`,
 		[
 			normalizedCache.callsign,
 			normalizedCache.email,
 			normalizedCache.updatedAt,
 			normalizedCache.provider,
+			normalizedCache.updatedBy,
 		]
 	);
 	return normalizedCache;

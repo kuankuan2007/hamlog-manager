@@ -20,11 +20,12 @@ function isCallsign2EmailMode(value: string | null): value is Callsign2EmailMode
 
 function toCachedResponse(
   mode: Callsign2EmailMode,
-  cache: { callsign: string; email: string; provider: string; updatedAt: string }
+  cache: { callsign: string; email: string; provider: string; updatedAt: string; updatedBy: string }
 ): Callsign2EmailResponse {
   return {
     callsign: cache.callsign,
     email: cache.email,
+    updatedBy: cache.updatedBy,
     comeFrom: cache.provider,
     realtime: false,
     lastUpdate: cache.updatedAt,
@@ -93,6 +94,7 @@ export const Callsign2EmailRouter = new Router({
       ctx.data = {
         callsign: cache.callsign,
         email: cache.email,
+        updatedBy: cache.updatedBy,
         comeFrom: cache.provider,
         realtime: true,
         lastUpdate: cache.updatedAt,

@@ -1,4 +1,5 @@
-import { all, get, normalizeCallsign } from './index';
+import { all, get, normalizeCallsign, publicAll, publicGet } from './index';
+import { selfInfo } from '@server/config';
 import type { Address } from '@schema/address';
 import type { CallsignDetail, CommunicationLog, CommunicationLogBasic, CommunicationLogSearchBasic, CommunicationLogSearchResult } from '@schema/communicationLog';
 import type { QSLReceive, QSLSend } from '@schema/qsl';
@@ -25,7 +26,7 @@ interface CommunicationLogRow {
 	rxReport: number;
 	txReport: number;
 	summary: string | null;
-	addressId: number | null;
+	hasAddress: number;
 	qslSendId: number | null;
 	qslReceiveId: number | null;
 }
@@ -40,7 +41,9 @@ const communicationLogColumns = `
 		log.rx_report AS rxReport,
 		log.tx_report AS txReport,
 		log.summary,
-		log.address_id AS addressId,
+		EXISTS (
+			SELECT 1 FROM public.addresses AS address WHERE address.callsign = log.callsign
+		) AS hasAddress,
 		log.qsl_send_id AS qslSendId,
 		log.qsl_receive_id AS qslReceiveId
 `;
@@ -61,12 +64,15 @@ function normalizeCallsigns(callsigns: string[]): string[] {
 }
 
 export function findAddressByCallsign(callsign: string): Promise<AddressRow | undefined> {
-	return get<AddressRow>(
+	return publicGet<AddressRow>(
 		`SELECT id, callsign, postal_code AS postalCode, address,
-				recipient_name AS recipientName, updated_at AS updatedAt
+				recipient_name AS recipientName, updated_at AS updatedAt,
+				updated_by AS updatedBy
 		 FROM addresses
-		 WHERE callsign = ?`,
-		[callsign]
+		 WHERE callsign = ?
+		 ORDER BY (updated_by = ?) DESC, updated_at DESC, id DESC
+		 LIMIT 1`,
+		[callsign, normalizeCallsign(selfInfo.callsign)]
 	);
 }
 
@@ -102,7 +108,9 @@ function getCommunicationLogFilterConditions(filters: CommunicationLogFilters): 
 		conditions.push(`qsl_receive_id IS ${filters.qslReceived ? 'NOT ' : ''}NULL`);
 	}
 	if (filters.hasAddress !== undefined) {
-		conditions.push(`address_id IS ${filters.hasAddress ? 'NOT ' : ''}NULL`);
+		conditions.push(
+			`EXISTS (SELECT 1 FROM public.addresses AS address WHERE address.callsign = log.callsign) = ${filters.hasAddress ? 1 : 0}`
+		);
 	}
 	return conditions;
 }
@@ -123,7 +131,7 @@ function getCommunicationLogFilterQuery(filters: CommunicationLogFilters): {
 				PARTITION BY callsign
 				ORDER BY time DESC, id DESC
 			) AS callsignRank
-			FROM communication_logs${filterWhere}
+			FROM communication_logs AS log${filterWhere}
 		) AS log`,
 		where: ' WHERE log.callsignRank = 1',
 	};
@@ -140,7 +148,7 @@ function toCommunicationLog(row: CommunicationLogRow): CommunicationLog {
 		rxReport: row.rxReport,
 		txReport: row.txReport,
 		summary: row.summary ?? undefined,
-		hasAddress: row.addressId !== null,
+		hasAddress: row.hasAddress !== 0,
 		qslReceived: row.qslReceiveId !== null,
 		qslSent: row.qslSendId !== null,
 	};
@@ -259,15 +267,16 @@ export async function selectAddresses(
 ): Promise<PaginatedResult<Address>> {
 	const pagination = getPagination(page, pageSize);
 	const [items, count] = await Promise.all([
-		all<Address>(
+		publicAll<Address>(
 			`SELECT callsign, postal_code AS postalCode, address,
-							recipient_name AS recipientName, updated_at AS updatedAt
+							recipient_name AS recipientName, updated_at AS updatedAt,
+							updated_by AS updatedBy
 			 FROM addresses
-			 ORDER BY callsign ASC
+			 ORDER BY callsign ASC, (updated_by = ?) DESC, updated_at DESC, id DESC
 			 LIMIT ? OFFSET ?`,
-			[pagination.pageSize, pagination.offset]
+			[normalizeCallsign(selfInfo.callsign), pagination.pageSize, pagination.offset]
 		),
-		get<{ total: number }>('SELECT COUNT(*) AS total FROM addresses'),
+		publicGet<{ total: number }>('SELECT COUNT(*) AS total FROM addresses'),
 	]);
 
 	return { ...pagination, items, total: count?.total ?? 0 };
@@ -275,12 +284,15 @@ export async function selectAddresses(
 
 export async function selectAddressByCallsign(callsign: string): Promise<Address | null> {
 	const normalizedCallsign = normalizeCallsign(callsign);
-	const address = await get<Address>(
+	const address = await publicGet<Address>(
 		`SELECT callsign, postal_code AS postalCode, address,
-						recipient_name AS recipientName, updated_at AS updatedAt
+					recipient_name AS recipientName, updated_at AS updatedAt,
+					updated_by AS updatedBy
 		 FROM addresses
-		 WHERE callsign = ?`,
-		[normalizedCallsign]
+		 WHERE callsign = ?
+		 ORDER BY (updated_by = ?) DESC, updated_at DESC, id DESC
+		 LIMIT 1`,
+		[normalizedCallsign, normalizeCallsign(selfInfo.callsign)]
 	);
 	return address ?? null;
 }
@@ -289,13 +301,22 @@ export async function selectAddressesByCallsigns(callsigns: string[]): Promise<A
 	const normalizedCallsigns = normalizeCallsigns(callsigns);
 	if (normalizedCallsigns.length === 0) return [];
 
-	return all<Address>(
+	return publicAll<Address>(
 		`SELECT callsign, postal_code AS postalCode, address,
-					recipient_name AS recipientName, updated_at AS updatedAt
-		 FROM addresses
-		 WHERE callsign IN (${normalizedCallsigns.map(() => '?').join(', ')})
+				recipient_name AS recipientName, updated_at AS updatedAt,
+				updated_by AS updatedBy
+		 FROM (
+			SELECT callsign, postal_code, address, recipient_name, updated_at, updated_by, id,
+				ROW_NUMBER() OVER (
+					PARTITION BY callsign
+					ORDER BY (updated_by = ?) DESC, updated_at DESC, id DESC
+				) AS owner_rank
+			FROM addresses
+			WHERE callsign IN (${normalizedCallsigns.map(() => '?').join(', ')})
+		 )
+		 WHERE owner_rank = 1
 		 ORDER BY callsign ASC`,
-		normalizedCallsigns
+		[normalizeCallsign(selfInfo.callsign), ...normalizedCallsigns]
 	);
 }
 

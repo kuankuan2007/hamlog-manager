@@ -1,32 +1,23 @@
 # 数据库
 
-项目使用 `data/logbook.db` 中的 SQLite 数据库。本页结构已根据当前数据库的 `sqlite_master`、外键信息和服务端迁移代码核实；数据量等易变化内容不作为文档固定快照。
+项目使用两个本地 SQLite 数据库：个人库默认是 `data/logbook.db`，保存通联和 QSL；公共库默认是 `data/public.db`，保存地址及呼号邮箱映射。路径可分别由 `config/values.ts` 配置。本页记录新建数据库结构；已有个人库可能保留迁移前的地址列和公共表，显式迁移只复制数据，不删除旧库内容。
 
 ## 概览
 
-- `PRAGMA user_version = 6`
-- 五张业务表：`communication_logs`、`addresses`、`qsl_sends`、`qsl_receives`、`callsign_email_cache`
+- 个人库 `PRAGMA user_version = 7`，包含 `communication_logs`、`qsl_sends`、`qsl_receives`
+- 公共库 `PRAGMA user_version = 1`，包含 `addresses`、`callsign_email_cache`
 - 无业务视图或触发器
 - 所有业务表均使用 `INTEGER PRIMARY KEY AUTOINCREMENT`
 - 服务端连接会启用 SQLite 外键
-- 数据库使用 WAL 日志模式（运行时伴随 `logbook.db-shm` 和 `logbook.db-wal` 文件）；服务端启动默认执行 `wal_checkpoint(TRUNCATE)` 检查点，可用 `--no-checkpoint` 跳过
+- 两个数据库均使用 WAL 日志模式；正常启动默认检查点，可用 `--no-checkpoint` 跳过（显式迁移始终先检查点）
 
 ## 实体关系
 
 ```mermaid
 erDiagram
-    ADDRESSES ||--o{ COMMUNICATION_LOGS : address_id
     QSL_SENDS ||--o{ COMMUNICATION_LOGS : qsl_send_id
     QSL_RECEIVES ||--o{ COMMUNICATION_LOGS : qsl_receive_id
 
-    ADDRESSES {
-        INTEGER id PK
-        TEXT callsign UK
-        TEXT postal_code
-        TEXT address
-        TEXT recipient_name
-        TEXT updated_at
-    }
     COMMUNICATION_LOGS {
         INTEGER id PK
         INTEGER sequence_number UK
@@ -37,7 +28,6 @@ erDiagram
         INTEGER rx_report
         INTEGER tx_report
         TEXT summary
-        INTEGER address_id FK
         INTEGER qsl_send_id FK
         INTEGER qsl_receive_id FK
     }
@@ -56,16 +46,32 @@ erDiagram
         TEXT received_at
         TEXT note
     }
+```
+
+通联表只有 QSL 两个外键，均允许 `NULL`，使用 `ON DELETE SET NULL` 和 `ON UPDATE CASCADE`。地址是否存在通过附加的公共库按呼号查询，不建立跨库外键。
+
+公共库实体：
+
+```mermaid
+erDiagram
+    ADDRESSES {
+        INTEGER id PK
+        TEXT callsign
+        TEXT postal_code
+        TEXT address
+        TEXT recipient_name
+        TEXT updated_at
+        TEXT updated_by
+    }
     CALLSIGN_EMAIL_CACHE {
         INTEGER id PK
         TEXT callsign
         TEXT email
         TEXT updated_at
         TEXT provider
+        TEXT updated_by
     }
 ```
-
-三个通联外键均允许 `NULL`，使用 `ON DELETE SET NULL` 和 `ON UPDATE CASCADE`。
 
 ## 表结构
 
@@ -81,23 +87,23 @@ erDiagram
 | `rx_report` | INTEGER | 否 | 接收报告 |
 | `tx_report` | INTEGER | 否 | 发送报告 |
 | `summary` | TEXT | 是 | 摘要 |
-| `address_id` | INTEGER | 是 | 外键到 `addresses.id` |
 | `qsl_send_id` | INTEGER | 是 | 外键到 `qsl_sends.id` |
 | `qsl_receive_id` | INTEGER | 是 | 外键到 `qsl_receives.id` |
 | `sequence_number` | INTEGER | 否 | 默认 0，由唯一索引保证唯一 |
 
 数据库本身没有日期格式或报告范围的 `CHECK`，约束由应用层 Ajv 执行。
 
-### `addresses`
+### `addresses`（公共库）
 
 | 列 | 类型 | 可空 | 约束/说明 |
 | --- | --- | --- | --- |
 | `id` | INTEGER | 否 | 主键，自增 |
-| `callsign` | TEXT | 否 | UNIQUE；每个呼号最多一个当前地址 |
+| `callsign` | TEXT | 否 | 对应的呼号 |
 | `postal_code` | TEXT | 否 | 邮政编码 |
 | `address` | TEXT | 否 | 邮寄地址 |
 | `recipient_name` | TEXT | 是 | 收件人 |
 | `updated_at` | TEXT | 是 | 更新时间；数据库允许空，当前 API 写入非空值 |
+| `updated_by` | TEXT | 否 | 提供者呼号；与 `callsign` 组成唯一键 |
 
 ### `qsl_sends`
 
@@ -120,57 +126,55 @@ erDiagram
 | `received_at` | TEXT | 否 | 收件日期 |
 | `note` | TEXT | 是 | 备注；当前 API 未公开 |
 
-### `callsign_email_cache`
+### `callsign_email_cache`（公共库）
 
 | 列 | 类型 | 可空 | 说明 |
 | --- | --- | --- | --- |
 | `id` | INTEGER | 否 | 主键，自增，也是相同时间的排序依据 |
 | `callsign` | TEXT | 否 | 规范化呼号 |
-| `email` | TEXT | 否 | 邮箱；通过大小写不敏感唯一索引保证全表唯一 |
+| `email` | TEXT | 否 | 邮箱；与 `updated_by` 组成大小写不敏感唯一键 |
 | `updated_at` | TEXT | 否 | 更新时间 |
 | `provider` | TEXT | 否 | 来源，例如 `select:qrz.com` 或 `manual` |
+| `updated_by` | TEXT | 否 | 提供者呼号 |
 
-该表对邮箱地址施加 `COLLATE NOCASE` 的唯一约束，同一个邮箱只能对应一条当前缓存记录。读取按 `updated_at DESC, id DESC` 取最新项；同一来源的最新邮箱未变化时只刷新时间。写入已存在邮箱但呼号不同的记录时，会把该邮箱归属更新到最新呼号。`manual` 为手动更新邮箱的固定来源值，服务端不会接受来自调用方的 `provider` 覆盖。
+每个提供者可独立保存同一邮箱的呼号映射。查询多个贡献者时，当前配置呼号优先，其次按 `updated_at DESC, id DESC`。同一提供者写入已存在邮箱时，只更新该提供者自己的记录。`manual` 为手动更新邮箱的固定来源值，服务端不会接受来自调用方的 `provider` 覆盖。
 
 ## 索引
 
 | 表 | 索引 | 列 |
 | --- | --- | --- |
-| `addresses` | 自动唯一索引 | `callsign` |
-| `addresses` | `idx_addresses_callsign` | `callsign` |
+| `addresses` | `idx_addresses_callsign_updated_by` | `callsign, updated_by`，UNIQUE |
+| `addresses` | `idx_addresses_callsign_owner_updated_at` | `callsign, updated_by, updated_at DESC, id DESC` |
 | `communication_logs` | `idx_communication_logs_time` | `time` |
 | `communication_logs` | `idx_communication_logs_time_id` | `time DESC, id DESC` |
 | `communication_logs` | `idx_communication_logs_sequence_number` | `sequence_number`，UNIQUE |
 | `communication_logs` | `idx_communication_logs_callsign` | `callsign` |
 | `communication_logs` | `idx_communication_logs_callsign_time_id` | `callsign, time, id` |
 | `communication_logs` | `idx_communication_logs_callsign_time_frequency` | `callsign, time, frequency` |
-| `communication_logs` | `idx_communication_logs_address_id` | `address_id` |
 | `communication_logs` | `idx_communication_logs_qsl_send_id` | `qsl_send_id` |
 | `communication_logs` | `idx_communication_logs_qsl_receive_id` | `qsl_receive_id` |
 | `qsl_sends` | `idx_qsl_sends_callsign` | `callsign` |
 | `qsl_receives` | `idx_qsl_receives_callsign` | `callsign` |
-| `callsign_email_cache` | `idx_callsign_email_cache_callsign_updated_at_id` | `callsign, updated_at DESC, id DESC` |
-| `callsign_email_cache` | `idx_callsign_email_cache_email_nocase` | `email COLLATE NOCASE`，UNIQUE |
-
-`idx_addresses_callsign` 与 UNIQUE 约束自动索引重复，但它属于当前实际数据库结构；移除前应通过正式迁移评估。
+| `callsign_email_cache` | `idx_callsign_email_cache_callsign_owner_updated_at` | `callsign, updated_by, updated_at DESC, id DESC` |
+| `callsign_email_cache` | `idx_callsign_email_cache_email_owner_nocase` | `email COLLATE NOCASE, updated_by`，UNIQUE |
 
 ## 关联和写入语义
 
-- 新增通联时关联该呼号当前地址、最新 QSL 发件和最新 QSL 收件。
-- upsert 地址后，为同呼号且尚无地址关联的所有通联补充外键。
+- 新增通联时关联最新 QSL 发件和最新 QSL 收件；地址状态按公共库中是否存在该呼号计算。
+- 地址按 `(callsign, updated_by)` upsert；查询单条记录时优先选择当前配置呼号提供的数据。
 - 新增 QSL 发件或收件后，为同呼号且对应外键为空的通联补充关联。
-- 已存在的关联不会因后续地址或 QSL 历史记录而覆盖。
-- 删除关联实体时，启用外键的连接会把通联外键设为 `NULL`。
+- 后续地址新增不修改个人库通联行；地址查询与通联列表通过 `callsign` 关联。
+- 新建个人库不含地址列或地址表；旧库中的兼容列和表不会由公共数据迁移删除。
 
 ## 迁移边界
 
-当前迁移可以从旧版本增量更新到版本 6，但不能从全空 SQLite 文件创建所有核心表；全新部署应使用服务端 `--init` 启动参数创建数据库文件（见下文“初始化与重建”）。版本 4 为 `qsl_sends` 增加可空的 `status` 和 `tracking_number`；版本 5 为 `callsign_email_cache.email` 增加大小写不敏感唯一索引，并在建索引前按邮箱去重，仅保留最新记录；版本 6 重建外键仍指向 `qsl_sends_legacy` 的旧 `communication_logs` 表，使外键改指 `qsl_sends` 并将失效关联置 `NULL`。`callsign_email_cache` 是唯一由现有迁移完整创建的业务表，其他核心表必须已存在。备份和部署既有数据时仍应把数据库文件视为必要运行资产。
+个人库迁移可从旧版本增量升级到版本 7；新建公共库会在启动时创建两张公共表。公共库若已有无 `updated_by` 的旧表，原表会保留为 `_legacy` 备份，数据复制到带 owner 的新表。旧个人库中的地址和邮箱数据只由 `--migrate-public-data` 显式复制；默认冲突以 WARN 报告并跳过，`--overwrite-public-data` 可在迁移时整条覆盖。两种方式均不删除个人库原数据。迁移执行前会检查点两个数据库。
 
 ## 初始化与重建
 
-全新部署使用服务端 `--init` 启动参数（见 [服务端](server.md)）从零创建 `data/logbook.db`：服务端在执行迁移等常规启动步骤之前，先按本文档的完整结构创建数据库文件，包含全部核心表、全部索引、WAL 日志模式和 `PRAGMA user_version = 6`。若 `data/logbook.db` 已存在，`--init` 输出警告日志并被忽略，不会对现有数据库做任何改动。
+全新部署使用服务端 `--init` 创建个人库（版本 7）；公共库按配置路径在启动时自动创建。若个人库已存在，`--init` 输出警告并忽略，不会重建该文件。
 
-数据库相关启动步骤（`--init` 创建、迁移、检查点、维护动作）失败时，服务端输出 fatal 级错误和 warn 级提示后以非零码退出。若失败原因是数据库文件损坏或表结构不正确，应先备份 `data/logbook.db` 及伴随的 `logbook.db-shm`、`logbook.db-wal` 文件，再删除这三个文件，并附带 `--init` 重新启动以重建正确的表结构。重建得到的是空数据库，原数据库中的全部数据都会丢弃，是否仍可从备份文件恢复数据应先行评估。
+数据库相关启动步骤失败时，服务端以非零码退出。修复前应备份个人库和公共库及各自 WAL 文件；不要把 `--init` 当作现有数据库修复命令，也不要在未确认备份可恢复前删除数据库文件。
 
 ## 维护建议
 
@@ -178,5 +182,5 @@ erDiagram
 - 始终使用零填充的 `YYYY-MM-DD` 或 `YYYY-MM-DD HH:mm`，保持文本排序与时间排序一致。
 - 不要手动修改 `sqlite_sequence`。
 - 修改表结构时同步更新迁移、`user_version`、共享模型和本文档。
-- 数据写入前备份 `data/logbook.db`；`data/backups/` 可用于保存维护前副本。备份前应先执行 WAL 检查点（服务端启动时默认执行），或将 `logbook.db-shm`、`logbook.db-wal` 一并复制，避免遗漏未合并数据。
+- 数据写入前备份个人库和公共库；备份前应执行 WAL 检查点，或同时复制各自的 `-shm`、`-wal` 文件。
 - `sequence_number` 如与 `time ASC, id ASC` 不一致，使用服务端维护参数修复，不应直接逐行交换唯一值。

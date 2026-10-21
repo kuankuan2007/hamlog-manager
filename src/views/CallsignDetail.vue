@@ -89,6 +89,7 @@ import QslSendTable from '@/components/dataDisplay/QslSendTable.vue';
 import { selectCallsignDetail, type CallsignDetail } from '@/api/select';
 import type { Callsign2EmailResponse } from '@/api/schema';
 import { copyText } from '@kuankuan/assist-2026/utils/copyText';
+import { formatUpdatedBy } from '@/scripts/selfInfo';
 
 const detail = ref<CallsignDetail | null>(null);
 const props = defineProps<{
@@ -104,9 +105,13 @@ const detailError = ref<string | null>(null);
 const emailInfo = ref<Callsign2EmailResponse | null>(null);
 const emailSourceLabel = computed(() => {
   if (!emailInfo.value) return '非实时';
-  if (emailInfo.value.realtime) return '实时';
-  if (emailInfo.value.comeFrom === 'manual') return '手动';
-  return emailInfo.value.lastUpdate ?? '非实时';
+  const source = emailInfo.value.realtime
+    ? '实时'
+    : emailInfo.value.comeFrom === 'manual'
+      ? '手动'
+      : emailInfo.value.lastUpdate ?? '非实时';
+  const owner = formatUpdatedBy(emailInfo.value.updatedBy);
+  return owner ? `${owner} · ${source}` : source;
 });
 async function getDetails(callsign: string) {
   selectCallsignDetail(callsign)

@@ -1,4 +1,6 @@
 import {
+  databasePath as databasePathValue,
+  publicDatabasePath as publicDatabasePathValue,
   email as emailValues,
   qrzCookie as qrzCookieValue,
   selfInfo as selfInfoValues,
@@ -28,10 +30,15 @@ export interface SmtpConfig {
 }
 
 export interface AppConfig {
+  databasePath: string;
+  publicDatabasePath: string;
   selfInfo: SelfInfoConfig;
   qrzCookie: string;
   email: SmtpConfig;
 }
+
+const databasePath: string = databasePathValue;
+const publicDatabasePath: string = publicDatabasePathValue;
 
 export const selfInfo: SelfInfoConfig = selfInfoValues;
 
@@ -39,6 +46,6 @@ const qrzCookie: string = qrzCookieValue;
 
 const email: SmtpConfig = emailValues;
 
-const config: AppConfig = { selfInfo, qrzCookie, email };
+const config: AppConfig = { databasePath, publicDatabasePath, selfInfo, qrzCookie, email };
 
 export default config;

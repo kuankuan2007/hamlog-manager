@@ -18,7 +18,8 @@ import {
 	validateCreateQSLReceiveInput,
 	validateCreateQSLSendInput,
 } from '../schema';
-import { get, normalizeCallsign, run, runAndGetId } from './index';
+import { get, normalizeCallsign, publicRun, run, runAndGetId } from './index';
+import { selfInfo } from '@server/config';
 import {
 	findAddressByCallsign,
 	findLatestQSLReceiveByCallsign,
@@ -45,38 +46,26 @@ export async function upsertAddress(input: CreateAddressInput): Promise<Address>
 		);
 	}
 
-	await run('BEGIN');
-	try {
-		await run(
-			`INSERT INTO addresses (callsign, postal_code, address, recipient_name, updated_at)
-			 VALUES (?, ?, ?, ?, ?)
-			 ON CONFLICT(callsign) DO UPDATE SET
-				postal_code = excluded.postal_code,
-				address = excluded.address,
-				recipient_name = excluded.recipient_name,
-				updated_at = excluded.updated_at`,
-			[
-				normalizedInput.callsign,
-				normalizedInput.postalCode,
-				normalizedInput.address,
-				normalizedInput.recipientName ?? null,
-				normalizedInput.updatedAt,
-			]
-		);
-		const address = await findAddressByCallsign(normalizedInput.callsign);
-		await run(
-			`UPDATE communication_logs
-			 SET address_id = ?
-			 WHERE callsign = ? AND address_id IS NULL`,
-			[address?.id ?? null, normalizedInput.callsign]
-		);
-		await run('COMMIT');
-	} catch (error) {
-		await run('ROLLBACK');
-		throw error;
-	}
-
-	return normalizedInput;
+	const updatedBy = normalizeCallsign(selfInfo.callsign);
+	await publicRun(
+		`INSERT INTO addresses (
+			callsign, postal_code, address, recipient_name, updated_at, updated_by
+		) VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT(callsign, updated_by) DO UPDATE SET
+			postal_code = excluded.postal_code,
+			address = excluded.address,
+			recipient_name = excluded.recipient_name,
+			updated_at = excluded.updated_at`,
+		[
+			normalizedInput.callsign,
+			normalizedInput.postalCode,
+			normalizedInput.address,
+			normalizedInput.recipientName ?? null,
+			normalizedInput.updatedAt,
+			updatedBy,
+		]
+	);
+	return { ...normalizedInput, updatedBy };
 }
 
 export async function insertQSLSend(input: CreateQSLSendInput): Promise<QSLSend> {
@@ -199,7 +188,6 @@ export async function insertCommunicationLog(
 			findLatestQSLSendByCallsign(callsign),
 			findLatestQSLReceiveByCallsign(callsign),
 		]);
-		const addressId = address?.id ?? null;
 		const qslSendId = qslSent?.id ?? null;
 		const qslReceiveId = qslReceived?.id ?? null;
 		const sequence = await get<{ sequenceNumber: number; maximumSequenceNumber: number }>(
@@ -226,8 +214,8 @@ export async function insertCommunicationLog(
 		const communicationLogId = await runAndGetId(
 			`INSERT INTO communication_logs (
 				time, callsign, frequency, mode, rx_report, tx_report, summary,
-				address_id, qsl_send_id, qsl_receive_id, sequence_number
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				qsl_send_id, qsl_receive_id, sequence_number
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				normalizedInput.time,
 				callsign,
@@ -236,7 +224,6 @@ export async function insertCommunicationLog(
 				normalizedInput.rxReport,
 				normalizedInput.txReport,
 				normalizedInput.summary ?? null,
-				addressId,
 				qslSendId,
 				qslReceiveId,
 				sequence.sequenceNumber,

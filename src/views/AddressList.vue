@@ -19,11 +19,12 @@
               <th>地址</th>
               <th>收件人</th>
               <th>更新时间</th>
+              <th>提供者</th>
               <th>操作</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="address in addresses" :key="address.callsign">
+            <tr v-for="address in addresses" :key="address.callsign + address.updatedBy">
               <td><input type="checkbox" name="callsigns" :value="address.callsign" /></td>
               <td>
                 <RouterLink :to="`/callsign/${encodeURIComponent(address.callsign)}`">
@@ -34,6 +35,7 @@
               <td>{{ address.address }}</td>
               <td>{{ address.recipientName ?? '—' }}</td>
               <td>{{ address.updatedAt }}</td>
+              <td>{{ formatUpdatedBy(address.updatedBy) }}</td>
               <td>
                 <a
                   :href="`/edit-address?callsign=${encodeURIComponent(address.callsign)}`"
@@ -54,6 +56,7 @@
 <script setup lang="ts">
 import { selectAllAddresses } from '@/api/select';
 import type { Address } from '@schema/address';
+import { formatUpdatedBy } from '@/scripts/selfInfo';
 
 const addresses = ref<Address[]>([]);
 const loading = ref(false);

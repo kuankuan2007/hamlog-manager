@@ -72,7 +72,7 @@ API 默认监听 `3000` 端口的所有网络接口（服务端启动参数 `--h
 | `pageSize` | number | `100` | 页大小；取整且最小为 1 |
 | `qslSent` | `true` / `false` | 不筛选 | 按 QSL 发件外键筛选 |
 | `qslReceived` | `true` / `false` | 不筛选 | 按 QSL 收件外键筛选 |
-| `hasAddress` | `true` / `false` | 不筛选 | 按地址外键筛选 |
+| `hasAddress` | `true` / `false` | 不筛选 | 按公共地址库中是否存在该呼号筛选 |
 | `deduplicateCallsigns` | `true` / `false` | `false` | 每个呼号只保留筛选结果中的最新通联 |
 
 布尔参数仅识别不区分大小写的 `true` 和 `false`；其他值等同未提供。多个筛选条件按 AND 组合。返回 `PaginatedResult<CommunicationLog>`，按 `time DESC, id DESC` 排序。
@@ -142,17 +142,17 @@ GET /api/select/communication-log?page=1&pageSize=100&qslSent=false&deduplicateC
 
 ### 地址分页列表
 
-`GET /api/select/address?page=1&pageSize=100` 返回 `PaginatedResult<Address>`，按呼号升序。
+`GET /api/select/address?page=1&pageSize=100` 返回 `PaginatedResult<Address>`，按呼号升序，列出各贡献者的记录；每项包含 `updatedBy`。
 
 ### 单个呼号
 
-`GET /api/select/address/{callsign}` 返回 `Address`；不存在时返回 `null`。
+`GET /api/select/address/{callsign}` 返回 `Address`；不存在时返回 `null`。多条命中时优先选择当前配置呼号提供的记录，否则取最近更新的一条。
 
 ### 批量查询
 
 `GET /api/select/address-query?callsign=JA1ABC,JA2DEF`
 
-逗号分隔输入会转大写、去空项并去重，不存在的呼号不出现在结果中。返回 `Address[]`，按呼号升序。缺失参数时返回空数组。
+逗号分隔输入会转大写、去空项并去重，不存在的呼号不出现在结果中。每个呼号只返回一条，优先本人提供的数据，否则取最近更新的一条。返回 `Address[]`，按呼号升序。缺失参数时返回空数组。
 
 ## QSL 读取
 
@@ -193,6 +193,7 @@ GET /api/select/communication-log?page=1&pageSize=100&qslSent=false&deduplicateC
 {
   "callsign": "JA1ABC",
   "email": "operator@example.com",
+  "updatedBy": "JA1ABC",
   "comeFrom": "select:qrz.com",
   "realtime": true,
   "lastUpdate": "2026-08-22 08:30",
@@ -277,7 +278,7 @@ export const selfInfo: SelfInfoConfig = {
 }
 ```
 
-缓存命中返回示例：
+缓存命中返回的 `updatedBy` 表示数据提供者；当前客户端提供的数据在界面显示为 `<YOU>`。缓存命中返回示例：
 
 ```json
 {
@@ -425,7 +426,7 @@ export const email: SmtpConfig = {
 }
 ```
 
-`recipientName` 和 `updatedAt` 可选。缺少 `updatedAt` 时填入当前 UTC 日期。按呼号 upsert，并关联同呼号中尚无地址的通联。
+`recipientName` 和 `updatedAt` 可选。缺少 `updatedAt` 时填入当前 UTC 日期。按 `(callsign, 当前配置呼号)` 在公共库 upsert；`updatedBy` 由服务端配置注入，不接受客户端指定。
 
 ### 新增 QSL 发件
 

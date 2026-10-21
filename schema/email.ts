@@ -57,6 +57,7 @@ export const SendEmailInputSchema = {
 export interface Callsign2EmailResponse {
   callsign: string;
   email: string | null;
+  updatedBy?: string;
   comeFrom?: string;
   realtime: boolean;
   lastUpdate?: string;
@@ -67,6 +68,7 @@ export interface Callsign2EmailResponse {
 export interface Email2CallsignResponse {
   email: string;
   callsign: string | null;
+  updatedBy?: string;
   comeFrom?: string;
   realtime?: boolean;
   lastUpdate?: string;

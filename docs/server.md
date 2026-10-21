@@ -18,8 +18,10 @@ pnpm server-start
 | --- | --- |
 | `--host {地址}` | 指定监听地址（如 `127.0.0.1`）；缺省监听所有网络接口 |
 | `--port {端口}` | 指定监听端口，缺省 `3000`；必须是 `0..65535` 的整数，非法值启动失败 |
-| `--init` | 全新部署时使用：`data/logbook.db` 不存在则在启动前创建包含完整版本 6 结构的数据库文件；文件已存在时输出警告日志并忽略该参数 |
-| `--fix` | 监听端口前修复全部通联外键，将其重新指向该呼号当前的地址与最新 QSL 收发记录（不存在时置 `NULL`），并输出修复行数 |
+| `--init` | 全新部署时使用：个人库不存在则在启动前创建版本 7 结构；文件已存在时输出警告并忽略，不会重建 |
+| `--migrate-public-data` | 将旧个人库中的地址和邮箱记录复制到公共库，冲突 WARN 并跳过；输出分表迁移计数后退出，旧库数据保留 |
+| `--overwrite-public-data` | 仅可与 `--migrate-public-data` 同用；冲突仍输出 WARN，但以旧个人库记录整条覆盖公共库同 owner 记录 |
+| `--fix` | 监听端口前修复通联的 QSL 外键，将其指向该呼号最新 QSL 收发记录（不存在时置 `NULL`），并输出修复行数；地址不再使用外键 |
 | `--maintain-sequence-numbers` | 监听端口前校验并修复全部通联记录序号 |
 | `--no-checkpoint` | 跳过两次 WAL 检查点 |
 
@@ -56,7 +58,8 @@ pnpm server-start -- --init
 | 项目 | 当前值 |
 | --- | --- |
 | API 监听 | 默认所有网络接口的 `3000` 端口；可用 `--host` / `--port` 覆盖 |
-| 数据库 | 相对于进程工作目录的 `data/logbook.db` |
+| 个人数据库 | 相对于进程工作目录的 `data/logbook.db` |
+| 公共数据库 | 相对于进程工作目录的 `data/public.db` |
 | 统一配置 | `config/`：类型与默认导出装配在 `index.ts`，实际值在 `values.ts`，经 `@config` 别名导入 |
 | 邮件头像 | 相对于进程工作目录的 `config/photo.jpg`（JPG，本地文件） |
 | 邮件模板 | 相对于进程工作目录的 `server/email/template.ejs` |
@@ -66,6 +69,8 @@ pnpm server-start -- --init
 
 ```ts
 interface AppConfig {
+  databasePath: string;
+  publicDatabasePath: string;
   selfInfo: SelfInfoConfig;
   qrzCookie: string;
   email: SmtpConfig;
@@ -82,25 +87,24 @@ SMTP 配置必须显式填写 `host` 和 `port` 字段，程序不会自行推�
 
 ## 数据库初始化与迁移
 
-数据库模块不再在导入时打开连接。服务端在 `startServer` 中解析完启动参数（含 `--init` 的新库创建）后，手动调用 `initializeDatabase()` 并等待完成，之后才执行检查点、维护和监听。`initializeDatabase()` 依次执行：
+数据库模块不再在导入时打开连接。服务端先初始化公共库，再初始化个人库并将公共库附加为 `public` schema，之后执行检查点、维护和监听。公共库保存 `addresses`、`callsign_email_cache`；个人库新建时只包含通联和 QSL 表。旧个人库中的地址和邮箱表保留作迁移源，正常启动不会删除这些旧数据。
 
 1. `PRAGMA foreign_keys = ON`；
 2. 开始即时事务并执行可重复迁移；
 3. 如有需要，为 `qsl_sends` 增加 `confirmed_at`、`status` 和 `tracking_number`；
-4. 创建邮箱缓存表及索引，按邮箱去重仅保留最新记录，并创建邮箱大小写不敏感唯一索引；
-5. 如有需要，重建外键仍指向 `qsl_sends_legacy` 的旧 `communication_logs` 表，使外键改指 `qsl_sends` 并将失效关联置 `NULL`；
-6. 如有需要，为通联表增加并回填 `sequence_number`；
-7. 创建序号唯一索引和时间/ID 索引；
-8. 设置 `PRAGMA user_version = 6`；
-9. 提交事务；
-10. 确保呼号、时间、频率组合索引存在。
+4. 如有需要，重建外键仍指向 `qsl_sends_legacy` 的旧 `communication_logs` 表，使 QSL 外键改指 `qsl_sends`；
+5. 如有需要，为通联表增加并回填 `sequence_number`；
+6. 创建序号唯一索引和时间/ID 索引；
+7. 设置个人库 `PRAGMA user_version = 7`；
+8. 提交事务；
+9. 确保呼号、时间、频率组合索引存在。
 
-迁移只补充当前版本所需结构，并不能从空数据库创建全部核心业务表。全新部署应使用 `--init` 创建包含 `communication_logs`、`addresses`、`qsl_sends`、`qsl_receives`、`callsign_email_cache` 及全部索引的数据库文件；恢复既有数据时仍需直接提供数据库文件。实际结构见 [数据库](database.md)。
+迁移只补充个人库当前版本所需结构，不能从空数据库创建所有个人表。全新部署应使用 `--init` 创建个人库，公共库在启动时自动创建。旧个人库数据通过 `--migrate-public-data` 显式复制；默认冲突 WARN 并跳过，搭配 `--overwrite-public-data` 才覆盖。迁移命令执行后退出，执行前检查点两个数据库，不删除旧数据。实际结构见 [数据库](database.md)。
 
 ## 读取行为
 
 - 通联列表按 `time DESC, id DESC` 排序并分页。
-- 可按地址、QSL 发送、QSL 接收外键是否存在筛选。
+- 地址筛选通过附加公共库按呼号匹配；QSL 筛选按个人库外键是否存在。
 - 呼号去重使用窗口函数，在筛选结果中保留各呼号最新记录。
 - 呼号详情并行读取通联、地址、QSL 发件和收件数据。
 - 地址批量查询按呼号升序；QSL 记录按对应日期和 `id` 倒序。
@@ -113,17 +117,17 @@ SMTP 配置必须显式填写 `host` 和 `port` 字段，程序不会自行推�
 写入使用 `BEGIN IMMEDIATE`。服务会：
 
 1. 规范化呼号；
-2. 查找该呼号最新地址、QSL 发件和 QSL 收件记录；
+2. 查找该呼号优先地址、QSL 发件和 QSL 收件记录；
 3. 按时间确定新记录的 `sequence_number`；
 4. 必要时以两阶段偏移方式后移已有序号，避免违反唯一索引；
-5. 插入通联及三个可选外键；
+5. 插入通联及两个可选 QSL 外键；
 6. 提交事务。
 
 同一时间的新记录排在已有同时间记录之后。
 
 ### 地址
 
-地址按 `callsign` 执行 upsert。写入后，同一事务会把该地址关联到相同呼号且 `address_id IS NULL` 的全部通联；已有地址关联不覆盖。
+地址按 `(callsign, 当前配置呼号)` 在公共库执行 upsert。查询优先返回本人提供的地址，否则返回最近更新的一条；新增地址不修改个人库通联表。
 
 ### QSL 记录
 

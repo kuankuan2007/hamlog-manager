@@ -70,6 +70,7 @@
 import { callsign2email } from '@/api/auto';
 import type { Callsign2EmailResponse } from '@/api/schema';
 import { selectCallsignByEmail } from '@/api/select';
+import { formatUpdatedBy } from '@/scripts/selfInfo';
 
 type CallsignLookupState = {
   email: string | null;
@@ -129,9 +130,13 @@ function isCallsign(value: string): boolean {
 }
 
 function getLookupLabel(response: Callsign2EmailResponse): string {
-  if (response.realtime) return '实时';
-  if (response.comeFrom === 'manual') return '手动';
-  return response.lastUpdate ?? '缓存';
+  const source = response.realtime
+    ? '实时'
+    : response.comeFrom === 'manual'
+      ? '手动'
+      : response.lastUpdate ?? '缓存';
+  const owner = formatUpdatedBy(response.updatedBy);
+  return owner ? `${owner} · ${source}` : source;
 }
 
 function ensureLookupState(callsign: string): CallsignLookupState {
@@ -323,7 +328,9 @@ async function resolveEmail(value: string): Promise<void> {
   try {
     const response = await selectCallsignByEmail(email);
     state.callsign = response.callsign;
-    state.label = response.lastUpdate ?? response.comeFrom ?? '缓存';
+    const owner = formatUpdatedBy(response.updatedBy);
+    const source = response.lastUpdate ?? response.comeFrom ?? '缓存';
+    state.label = owner ? `${owner} · ${source}` : source;
     state.loaded = true;
   } catch {
     state.callsign = null;

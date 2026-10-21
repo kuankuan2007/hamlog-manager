@@ -32,6 +32,7 @@ export const SelectCallsignByEmailRouter = new Router({
       : {
           email: cache.email,
           callsign: cache.callsign,
+          updatedBy: cache.updatedBy,
           comeFrom: cache.provider,
           lastUpdate: cache.updatedAt,
         };

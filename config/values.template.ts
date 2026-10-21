@@ -2,11 +2,23 @@
 // config/values.ts 包含敏感信息，已被 .gitignore 排除，不要提交到版本控制。
 // 各字段的类型约束定义在 config/index.ts；字段缺失或类型错误时 pnpm type-check 会报错。
 
-import type { SelfInfoConfig, SmtpConfig } from './index';
+import type { DefaultValueConfig, SelfInfoConfig, SmtpConfig } from './index';
 
 // SQLite 数据库文件位置：相对路径以项目工作目录为基准。
 export const databasePath: string = './data/logbook.db';
 export const publicDatabasePath: string = './data/public.db';
+
+// 前端新建表单的默认值。
+export const defaultValue: DefaultValueConfig = {
+  newLog: {
+    frequency: 145.67,
+    mode: 'FM',
+  },
+  sendEmail: {
+    cc: ['<CC_SELF>'],
+    bcc: [],
+  },
+};
 
 // 本人信息：用于地址打印、邮件正文与页脚，以及 <> 包裹特殊呼号的邮箱映射。
 export const selfInfo: SelfInfoConfig = {

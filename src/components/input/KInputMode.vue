@@ -7,7 +7,9 @@
 </template>
 <script setup lang="ts">
 import type { RadioMode } from '@/types/data';
-const modelValue = defineModel<RadioMode>('modelValue', { default: () => 'FM' });
+import { defaultValue } from '@/config';
+
+const modelValue = defineModel<RadioMode>('modelValue', { default: () => defaultValue.newLog.mode });
 const inputValue = computed({
   get: () => modelValue.value,
   set: (value: RadioMode) => {

@@ -22,6 +22,7 @@ import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { getCurrentTimeTagString } from '@util/time';
 import type { RadioMode } from '@/types/data';
 import { type CreateCommunicationLogInput, newCommunicationLog } from '@/api/update';
+import { defaultValue } from '@/config';
 
 const props = defineProps<{
   callsign?: string;
@@ -32,8 +33,8 @@ const time = ref(getCurrentTimeTagString());
 const rxReport = ref(59);
 const txReport = ref(59);
 const summary = ref('');
-const freq = ref(145.67);
-const mode = ref<RadioMode>('FM');
+const freq = ref(defaultValue.newLog.frequency);
+const mode = ref<RadioMode>(defaultValue.newLog.mode);
 
 const submitForm = () => {
   const options: CreateCommunicationLogInput = {

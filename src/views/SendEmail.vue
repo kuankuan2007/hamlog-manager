@@ -59,22 +59,19 @@ import { previewEmail, sendEmailRequest } from '@/api/email';
 import InputEmailList from '@/components/input/InputEmailList.vue';
 import type { SendEmailRouteProps } from '@/scripts/sendEmail';
 import type { SendEmailInput } from '@schema/email';
+import { defaultValue } from '@/config';
 
 const props = defineProps<SendEmailRouteProps>();
 
-const selfCallsign = '<CC_SELF>';
-
-function withDefaultSelfCc(values?: string[]): string[] {
+function withDefaultValues(values: string[] | undefined, defaults: string[]): string[] {
   const nextValues = values ? [...values] : [];
-  if (nextValues.some((value) => value.trim().toUpperCase() === selfCallsign)) {
-    return nextValues;
-  }
-  return [selfCallsign, ...nextValues];
+  const existingValues = new Set(nextValues.map((value) => value.trim().toUpperCase()));
+  return [...defaults.filter((value) => !existingValues.has(value.trim().toUpperCase())), ...nextValues];
 }
 
 const toList = ref<string[]>(props.to ? [...props.to] : []);
-const ccList = ref<string[]>(withDefaultSelfCc(props.cc));
-const bccList = ref<string[]>(props.bcc ? [...props.bcc] : []);
+const ccList = ref<string[]>(withDefaultValues(props.cc, defaultValue.sendEmail.cc));
+const bccList = ref<string[]>(props.bcc ? [...props.bcc] : [...defaultValue.sendEmail.bcc]);
 const toResolved = ref<string[]>([]);
 const ccResolved = ref<string[]>([]);
 const bccResolved = ref<string[]>([]);

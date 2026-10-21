@@ -4,6 +4,7 @@ import {
   email as emailValues,
   qrzCookie as qrzCookieValue,
   selfInfo as selfInfoValues,
+  defaultValue as defaultValueValues,
 } from './values';
 
 export interface SelfInfoAddressConfig {
@@ -29,12 +30,24 @@ export interface SmtpConfig {
   fromName?: string;
 }
 
+export interface DefaultValueConfig {
+  newLog: {
+    frequency: number;
+    mode: 'FM' | 'AM' | 'CW';
+  };
+  sendEmail: {
+    cc: string[];
+    bcc: string[];
+  };
+}
+
 export interface AppConfig {
   databasePath: string;
   publicDatabasePath: string;
   selfInfo: SelfInfoConfig;
   qrzCookie: string;
   email: SmtpConfig;
+  defaultValue: DefaultValueConfig;
 }
 
 const databasePath: string = databasePathValue;
@@ -46,6 +59,8 @@ const qrzCookie: string = qrzCookieValue;
 
 const email: SmtpConfig = emailValues;
 
-const config: AppConfig = { databasePath, publicDatabasePath, selfInfo, qrzCookie, email };
+export const defaultValue: DefaultValueConfig = defaultValueValues;
+
+const config: AppConfig = { databasePath, publicDatabasePath, selfInfo, qrzCookie, email, defaultValue };
 
 export default config;

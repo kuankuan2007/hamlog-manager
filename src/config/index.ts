@@ -1,2 +1,3 @@
 export { selfInfo } from '@config';
-export type { SelfInfoAddressConfig, SelfInfoConfig } from '@config';
+export { defaultValue } from '@config';
+export type { DefaultValueConfig, SelfInfoAddressConfig, SelfInfoConfig } from '@config';

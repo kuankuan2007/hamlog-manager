@@ -16,6 +16,7 @@ export interface SelfInfoAddressConfig {
 export interface SelfInfoConfig {
   address: SelfInfoAddressConfig;
   callsign: string;
+  communicationProofIssuer: string;
   email: string;
   emailAddresses?: Record<string, string>;
 }

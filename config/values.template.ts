@@ -30,6 +30,8 @@ export const selfInfo: SelfInfoConfig = {
   },
   // 本人呼号，用于邮件模板落款，前端地址打印等
   callsign: 'BG0AAA',
+  // 通联证明落款
+  communicationProofIssuer: '证明人姓名或单位名称',
   // 本人常用邮箱
   email: 'you@example.com',
   // 可选：<> 包裹特殊呼号到邮箱的映射，键不区分大小写。

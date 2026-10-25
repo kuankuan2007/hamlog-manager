@@ -50,10 +50,13 @@ export async function selectCommunicationLogs(
 }
 
 export async function selectCommunicationLogsByCallsign(
-  callsign: string
+  callsign: string,
+  abortController?: AbortController
 ): Promise<CommunicationLog[]> {
   return await getData<CommunicationLog[]>(
-    fetch(`/api/select/communication-log/${encodeURIComponent(callsign)}`)
+    fetch(`/api/select/communication-log/${encodeURIComponent(callsign)}`, {
+      signal: abortController?.signal,
+    })
   );
 }
 

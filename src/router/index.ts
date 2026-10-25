@@ -41,6 +41,17 @@ const router = createRouter({
       },
     },
     {
+      path: '/communication-proof',
+      name: 'communication-proof',
+      component: () => import('@/views/CommunicationProof.vue'),
+      meta: {
+        title: '通联证明',
+      },
+      props: (route) => ({
+        ids: getCallsignQuery(route.query.ids),
+      }),
+    },
+    {
       path: '/address-print',
       name: 'address-print',
       component: () => import('@/views/AddressPrint.vue'),

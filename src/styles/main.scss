@@ -1,4 +1,5 @@
 @use '@/assets/fontello/font-defines.scss' as *;
+@use '@/assets/fonts/font-defines.scss' as *;
 body {
   margin: 0;
   padding: 0;
@@ -79,5 +80,11 @@ textarea {
       outline-color: theme.get('active-color');
       border-color: theme.get('active-color');
     }
+  }
+}
+@media print {
+  #vue-inspector-container,
+  #__vue-devtools-container__ {
+    display: none;
   }
 }

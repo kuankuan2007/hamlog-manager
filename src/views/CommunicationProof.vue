@@ -38,11 +38,7 @@
           <div class="search-row">
             <label>
               按呼号搜索
-              <input
-                v-model.trim="searchQuery"
-                type="search"
-                placeholder="输入完整或部分呼号"
-              />
+              <input v-model.trim="searchQuery" type="search" placeholder="输入完整或部分呼号" />
             </label>
           </div>
           <div v-if="hasSearched" ref="searchPopover" class="search-popover">
@@ -51,10 +47,18 @@
               <li v-for="result in searchResults" :key="result.callsign">
                 <div class="callsign-heading">
                   <strong class="callsign-data">{{ result.callsign }}</strong>
-                  <span>{{ logsByCallsign[result.callsign]?.length ?? result.logs.length }} 条记录</span>
+                  <span
+                    >{{
+                      logsByCallsign[result.callsign]?.length ?? result.logs.length
+                    }}
+                    条记录</span
+                  >
                 </div>
                 <ul v-if="logsByCallsign[result.callsign]?.length" class="log-options">
-                  <li v-for="record in logsByCallsign[result.callsign].slice(0, 3)" :key="record.id">
+                  <li
+                    v-for="record in logsByCallsign[result.callsign].slice(0, 3)"
+                    :key="record.id"
+                  >
                     <label>
                       <input
                         type="checkbox"
@@ -62,8 +66,8 @@
                         @change="toggleRecord(record)"
                       />
                       <span>
-                        {{ record.time }} · {{ record.frequency.toFixed(3) }} MHz · {{ record.mode }} ·
-                        {{ record.rxReport }}/{{ record.txReport }}
+                        {{ record.time }} · {{ record.frequency.toFixed(3) }} MHz ·
+                        {{ record.mode }} · {{ record.rxReport }}/{{ record.txReport }}
                       </span>
                     </label>
                   </li>
@@ -72,7 +76,9 @@
                   v-if="(logsByCallsign[result.callsign]?.length ?? 0) > 3"
                   class="more-logs"
                 >
-                  <summary>展开其余 {{ logsByCallsign[result.callsign].length - 3 }} 条记录</summary>
+                  <summary>
+                    展开其余 {{ logsByCallsign[result.callsign].length - 3 }} 条记录
+                  </summary>
                   <ul class="log-options">
                     <li v-for="record in logsByCallsign[result.callsign].slice(3)" :key="record.id">
                       <label>
@@ -82,8 +88,8 @@
                           @change="toggleRecord(record)"
                         />
                         <span>
-                          {{ record.time }} · {{ record.frequency.toFixed(3) }} MHz · {{ record.mode }} ·
-                          {{ record.rxReport }}/{{ record.txReport }}
+                          {{ record.time }} · {{ record.frequency.toFixed(3) }} MHz ·
+                          {{ record.mode }} · {{ record.rxReport }}/{{ record.txReport }}
                         </span>
                       </label>
                     </li>
@@ -119,7 +125,7 @@
       <h1>通联证明</h1>
       <p class="recipient">致{{ recipientOrganization }}：</p>
       <div class="proof-content">
-        <p class="introduction">
+        <p class="content">
           兹证明，本台（呼号：{{ selfInfoData.callsign }}）与{{
             recipientName
           }}相关业余无线电台的通联记录如下：
@@ -153,7 +159,9 @@
           </tbody>
         </table>
         <p v-else-if="!error" class="empty">请在页面上方搜索并选择通联记录。</p>
-        <p class="closing">以上通联记录摘录自本电台日志，特此证明。</p>
+        <p class="content">根据《业余无线电台管理办办法》第三十六条之规定，我台将如实记录并保留上述通联记录并保留2年以上，以备查验。</p>
+        <p class="content">我台对与{{ recipientName }}的通联表示诚挚的感谢，并期待未来能有更多的合作与交流的机会。</p>
+        <p class="content">特此证明。</p>
       </div>
 
       <div class="issuer">
@@ -263,10 +271,10 @@ async function searchLogs(): Promise<void> {
     if (controller.signal.aborted) return;
 
     const logs = await Promise.all(
-      results.map(async ({ callsign }) => [
-        callsign,
-        await selectCommunicationLogsByCallsign(callsign, controller),
-      ] as const)
+      results.map(
+        async ({ callsign }) =>
+          [callsign, await selectCommunicationLogsByCallsign(callsign, controller)] as const
+      )
     );
     if (controller.signal.aborted) return;
     logsByCallsign.value = Object.fromEntries(logs);
@@ -327,7 +335,6 @@ function printProof(): void {
 </script>
 
 <style scoped lang="scss">
-
 @page {
   size: A4;
   margin: 3.7cm 2.6cm 3.5cm 2.8cm;
@@ -545,7 +552,7 @@ function printProof(): void {
   }
 
   .introduction,
-  .closing {
+  .content {
     text-indent: 2em;
   }
   .proof-content {
@@ -576,6 +583,11 @@ function printProof(): void {
 
   .empty {
     text-align: center;
+    border: 1px solid;
+    @include theme.use {
+      border-color: theme.get('strong-color');
+      color: theme.get('strong-color');
+    }
   }
 
   .closing {
@@ -590,7 +602,6 @@ function printProof(): void {
 }
 
 @media print {
-
   .proof-page {
     padding: 0;
   }

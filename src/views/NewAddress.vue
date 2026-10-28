@@ -2,15 +2,15 @@
   <div class="box">
     <h1>新建地址</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号： <KInputCallsign id="callsign" required v-model="callsign" /></p>
+      <p>呼号： <KInputCallsign id="callsign" required v-model="args.callsign" /></p>
       <p>
         邮政编码：
-        <input type="text" id="postalCode" name="postalCode" required v-model="postalCode" />
+        <input type="text" id="postalCode" name="postalCode" required v-model="args.postalCode" />
       </p>
-      <p>地址： <input type="text" id="address" name="address" required v-model="address" /></p>
+      <p>地址： <input type="text" id="address" name="address" required v-model="args.address" /></p>
       <p>
         收件人姓名：
-        <input type="text" id="recipientName" name="recipientName" v-model="recipientName" />
+        <input type="text" id="recipientName" name="recipientName" v-model="args.recipientName" />
       </p>
       <p><button type="submit">提交</button></p>
     </form>
@@ -19,22 +19,21 @@
 <script setup lang="ts">
 import { type CreateAddressRequest, newAddress } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { getURLArgs } from '@/scripts/urlArgs';
 
-const props = defineProps<{
-  callsign?: string;
-}>();
-
-const callsign = ref(props.callsign || '');
-const postalCode = ref('');
-const address = ref('');
-const recipientName = ref('');
+const args = getURLArgs({
+  callsign: { type: 'string' },
+  postalCode: { type: 'string' },
+  address: { type: 'string' },
+  recipientName: { type: 'string' },
+});
 
 const submitForm = () => {
   const options: CreateAddressRequest = {
-    callsign: callsign.value,
-    postalCode: postalCode.value,
-    address: address.value,
-    recipientName: recipientName.value || undefined,
+    callsign: args.callsign,
+    postalCode: args.postalCode,
+    address: args.address,
+    recipientName: args.recipientName || undefined,
   };
   newAddress(options)
     .then(() => {

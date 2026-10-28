@@ -2,8 +2,8 @@
   <div class="box">
     <h1>新增 QSL 收件记录</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号：<KInputCallsign v-model="callsign" required /></p>
-      <p>收件日期：<input v-model="receivedAt" type="date" name="receivedAt" required /></p>
+      <p>呼号：<KInputCallsign v-model="args.callsign" required /></p>
+      <p>收件日期：<input v-model="args.receivedAt" type="date" name="receivedAt" required /></p>
       <p>
         <button type="submit" :disabled="submitting">{{ submitting ? '提交中' : '提交' }}</button>
       </p>
@@ -15,19 +15,18 @@
 import { type CreateQSLReceiveInput, newQSLReceive } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { getCurrentTimeTagString } from '@util/time';
+import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
 
-const props = defineProps<{
-  callsign?: string;
-}>();
-
-const callsign = ref(props.callsign ?? '');
-const receivedAt = ref(getCurrentTimeTagString().slice(0, 10));
+const args = getURLArgs({
+  callsign: { type: 'string' },
+  receivedAt: new DateTagField(getCurrentTimeTagString().slice(0, 10)),
+});
 const submitting = ref(false);
 
 async function submitForm() {
   const options: CreateQSLReceiveInput = {
-    callsign: callsign.value,
-    receivedAt: receivedAt.value,
+    callsign: args.callsign,
+    receivedAt: args.receivedAt,
   };
 
   submitting.value = true;

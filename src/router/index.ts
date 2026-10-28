@@ -1,23 +1,5 @@
 import PageNotFoundView from '@/views/PageNotFoundView.vue';
-import {
-  normalizeEmailRouteRecipients,
-  normalizeEmailRouteText,
-  type EmailPrepareRouteProps,
-} from '@/scripts/sendEmail';
 import { createRouter, createWebHistory } from 'vue-router';
-
-function getCallsignQuery(query: unknown): string | undefined {
-  if (typeof query === 'string') return query;
-  if (Array.isArray(query) && typeof query[0] === 'string') return query[0];
-  return undefined;
-}
-
-function getPositiveIntegerQuery(query: unknown): number | undefined {
-  const value = getCallsignQuery(query);
-  if (value === undefined || !/^\d+$/.test(value)) return undefined;
-  const id = Number(value);
-  return Number.isSafeInteger(id) && id > 0 ? id : undefined;
-}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -47,9 +29,6 @@ const router = createRouter({
       meta: {
         title: '通联证明',
       },
-      props: (route) => ({
-        ids: getCallsignQuery(route.query.ids),
-      }),
     },
     {
       path: '/address-print',
@@ -58,9 +37,6 @@ const router = createRouter({
       meta: {
         title: '地址打印',
       },
-      props: (route) => ({
-        callsigns: getCallsignQuery(route.query.callsigns),
-      }),
     },
     {
       path: '/callsign/:callsign',
@@ -84,9 +60,6 @@ const router = createRouter({
       path: '/new-log',
       name: 'new-log',
       component: () => import('@/views/NewLog.vue'),
-      props: (route) => ({
-        callsign: getCallsignQuery(route.query.callsign),
-      }),
       meta: {
         title: '新增通联记录',
       },
@@ -95,9 +68,6 @@ const router = createRouter({
       path: '/new-address',
       name: 'new-address',
       component: () => import('@/views/NewAddress.vue'),
-      props: (route) => ({
-        callsign: getCallsignQuery(route.query.callsign),
-      }),
       meta: {
         title: '新建地址',
       },
@@ -106,10 +76,6 @@ const router = createRouter({
       path: '/manual-email',
       name: 'manual-email',
       component: () => import('@/views/ManualEmail.vue'),
-      props: (route) => ({
-        callsign: getCallsignQuery(route.query.callsign),
-        email: getCallsignQuery(route.query.email),
-      }),
       meta: {
         title: '手动更新邮箱',
       },
@@ -118,9 +84,6 @@ const router = createRouter({
       path: '/edit-address',
       name: 'edit-address',
       component: () => import('@/views/EditAddress.vue'),
-      props: (route) => ({
-        callsign: getCallsignQuery(route.query.callsign),
-      }),
       meta: {
         title: '编辑地址',
       },
@@ -137,9 +100,6 @@ const router = createRouter({
       path: '/new-qsl-send',
       name: 'new-qsl-send',
       component: () => import('@/views/NewQSLSend.vue'),
-      props: (route) => ({
-        callsign: getCallsignQuery(route.query.callsign),
-      }),
       meta: {
         title: '新增 QSL 发件记录',
       },
@@ -148,9 +108,6 @@ const router = createRouter({
       path: '/new-qsl-receive',
       name: 'new-qsl-receive',
       component: () => import('@/views/NewQSLReceive.vue'),
-      props: (route) => ({
-        callsign: getCallsignQuery(route.query.callsign),
-      }),
       meta: {
         title: '新增 QSL 收件记录',
       },
@@ -159,9 +116,6 @@ const router = createRouter({
       path: '/confirm-qsl-send',
       name: 'confirm-qsl-send',
       component: () => import('@/views/ConfirmQSLSend.vue'),
-      props: (route) => ({
-        id: getPositiveIntegerQuery(route.query.id),
-      }),
       meta: {
         title: '确认 QSL 发件记录',
       },
@@ -181,11 +135,6 @@ const router = createRouter({
       meta: {
         title: '准备邮件',
       },
-      props: (route): EmailPrepareRouteProps => ({
-        qslSendId: getPositiveIntegerQuery(route.query.qslSendId),
-        qslReceiveId: getPositiveIntegerQuery(route.query.qslReceiveId),
-        communicationLogId: getPositiveIntegerQuery(route.query.communicationLogId),
-      }),
     },
     {
       path: '/send-email',
@@ -194,13 +143,6 @@ const router = createRouter({
       meta: {
         title: '发送邮件',
       },
-      props: (route) => ({
-        title: normalizeEmailRouteText(route.query.title),
-        to: normalizeEmailRouteRecipients(route.query.to),
-        cc: normalizeEmailRouteRecipients(route.query.cc),
-        bcc: normalizeEmailRouteRecipients(route.query.bcc),
-        content: normalizeEmailRouteText(route.query.content),
-      }),
     },
   ],
 });

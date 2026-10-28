@@ -2,8 +2,8 @@
   <div class="box">
     <h1>呼号搜索</h1>
     <p class="search-box">
-      <KInputCallsign v-model="searchContent" placeholder="输入呼号进行搜索" :enable-search="false" />
-      <a :href="`/new-log?callsign=${searchContent}`" class="new-log-button" target="_blank"
+      <KInputCallsign v-model="args.query" placeholder="输入呼号进行搜索" :enable-search="false" />
+      <a :href="`/new-log?callsign=${encodeURIComponent(args.query)}`" class="new-log-button" target="_blank"
         >新增通联记录</a
       >
     </p>
@@ -14,7 +14,7 @@
           <h3 class="callsign-data">{{ item.callsign }}</h3>
           <p>
             <a :href="`/callsign/${item.callsign}`" class="detail-button" target="_blank">详情</a>
-            <a :href="`/new-log?callsign=${item.callsign}`" class="new-log-button" target="_blank"
+            <a :href="`/new-log?callsign=${encodeURIComponent(item.callsign)}`" class="new-log-button" target="_blank"
               >新增通联记录</a
             >
           </p>
@@ -35,8 +35,9 @@ import CommunicationLogBasicTable from '@/components/dataDisplay/CommunicationLo
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { highlight } from '@/scripts/searchHighlight';
 import type { CommunicationLogSearchResult } from '@schema/communicationLog';
+import { getURLArgs } from '@/scripts/urlArgs';
 
-const searchContent = ref('');
+const args = getURLArgs({ query: { type: 'string' } });
 const searchResult = ref<CommunicationLogSearchResult[]>([]);
 const resultListEle=useTemplateRef<HTMLUListElement>('resultListEle');
 function highlightCallsign(callsign: string) {
@@ -50,21 +51,24 @@ function updateSearchResult(query: string) {
   abortController?.abort();
   abortController = new AbortController();
   searchCallsign(query, abortController).then((res) => {
-    if (searchContent.value === query) {
+    if (args.query === query) {
       searchResult.value = res;
     }
   });
 }
-watch(searchContent, async (newVal) => {
+watch(() => args.query, async (newVal) => {
   if (newVal) {
     updateSearchResult(newVal);
+  } else {
+    abortController?.abort();
+    searchResult.value = [];
   }
-});
+}, { immediate: true });
 onMounted(() => {
-  highlightCallsign(searchContent.value);
+  highlightCallsign(args.query);
 });
 onUpdated(() => {
-  highlightCallsign(searchContent.value);
+  highlightCallsign(args.query);
 });
 </script>
 <style scoped lang="scss">

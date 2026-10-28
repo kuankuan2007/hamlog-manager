@@ -11,15 +11,15 @@
       </p>
       <p>
         邮政编码：
-        <input type="text" name="postalCode" required v-model="postalCode" />
+        <input type="text" name="postalCode" required v-model="args.postalCode" />
       </p>
       <p>
         地址：
-        <input type="text" name="address" required v-model="address" />
+        <input type="text" name="address" required v-model="args.address" />
       </p>
       <p>
         收件人姓名：
-        <input type="text" name="recipientName" v-model="recipientName" />
+        <input type="text" name="recipientName" v-model="args.recipientName" />
       </p>
       <p>
         <button type="submit" :disabled="submitting || loading">
@@ -36,15 +36,15 @@
 import { selectAddressByCallsign } from '@/api/select';
 import { type CreateAddressRequest, newAddress } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { getURLArgs } from '@/scripts/urlArgs';
 
-const props = defineProps<{
-  callsign?: string;
-}>();
-
-const callsign = (props.callsign ?? '').trim();
-const postalCode = ref('');
-const address = ref('');
-const recipientName = ref('');
+const args = getURLArgs({
+  callsign: { type: 'string' },
+  postalCode: { type: 'string' },
+  address: { type: 'string' },
+  recipientName: { type: 'string' },
+});
+const callsign = computed(() => args.callsign.trim());
 const loading = ref(false);
 const submitting = ref(false);
 const loadError = ref<string | null>(null);
@@ -56,21 +56,21 @@ const pageTitle = computed(() => {
 });
 
 async function loadAddress(): Promise<void> {
-  if (!callsign) return;
+  if (!callsign.value) return;
 
   loading.value = true;
   loadError.value = null;
   try {
-    const result = await selectAddressByCallsign(callsign);
+    const result = await selectAddressByCallsign(callsign.value);
     if (result === null) {
       mode.value = 'create';
       return;
     }
 
     mode.value = 'edit';
-    postalCode.value = result.postalCode;
-    address.value = result.address;
-    recipientName.value = result.recipientName ?? '';
+    if (!args.postalCode) args.postalCode = result.postalCode;
+    if (!args.address) args.address = result.address;
+    if (!args.recipientName) args.recipientName = result.recipientName ?? '';
   } catch (reason) {
     loadError.value = reason instanceof Error ? reason.message : String(reason);
   } finally {
@@ -79,13 +79,13 @@ async function loadAddress(): Promise<void> {
 }
 
 async function submitForm(): Promise<void> {
-  if (!callsign) return;
+  if (!callsign.value) return;
 
   const options: CreateAddressRequest = {
-    callsign,
-    postalCode: postalCode.value.trim(),
-    address: address.value.trim(),
-    recipientName: recipientName.value.trim() || undefined,
+    callsign: callsign.value,
+    postalCode: args.postalCode.trim(),
+    address: args.address.trim(),
+    recipientName: args.recipientName.trim() || undefined,
   };
 
   submitting.value = true;
@@ -101,7 +101,7 @@ async function submitForm(): Promise<void> {
   }
 }
 
-loadAddress();
+watch(callsign, () => void loadAddress(), { immediate: true });
 </script>
 
 <style scoped lang="scss">

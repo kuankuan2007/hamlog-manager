@@ -5,7 +5,8 @@
       <p>
         收件人：
         <InputEmailList
-          v-model="toList"
+          v-model="args.to"
+          v-model:input-value="args.toInput"
           v-model:resolved="toResolved"
           v-model:unresolved="toUnresolved"
           v-model:pending="toPending"
@@ -14,7 +15,8 @@
       <p>
         抄送：
         <InputEmailList
-          v-model="ccList"
+          v-model="args.cc"
+          v-model:input-value="args.ccInput"
           v-model:resolved="ccResolved"
           v-model:unresolved="ccUnresolved"
           v-model:pending="ccPending"
@@ -23,21 +25,22 @@
       <p>
         密送：
         <InputEmailList
-          v-model="bccList"
+          v-model="args.bcc"
+          v-model:input-value="args.bccInput"
           v-model:resolved="bccResolved"
           v-model:unresolved="bccUnresolved"
           v-model:pending="bccPending"
         />
       </p>
-      <p>标题：<input v-model="subject" type="text" placeholder="邮件标题" required /></p>
+      <p>标题：<input v-model="args.title" type="text" placeholder="邮件标题" required /></p>
       <p>
         格式：
-        <select v-model="contentType">
+        <select v-model="args.contentType">
           <option value="text">纯文本</option>
           <option value="html">HTML</option>
         </select>
       </p>
-      <p>正文：<textarea v-model="body" rows="12" placeholder="邮件正文" required /></p>
+      <p>正文：<textarea v-model="args.content" rows="12" placeholder="邮件正文" required /></p>
       <p class="hint">
         输入值包含 @ 时按邮箱处理，否则按呼号处理并自动读取缓存邮箱。未命中的呼号会以红色加粗显示。
       </p>
@@ -57,21 +60,21 @@
 <script setup lang="ts">
 import { previewEmail, sendEmailRequest } from '@/api/email';
 import InputEmailList from '@/components/input/InputEmailList.vue';
-import type { SendEmailRouteProps } from '@/scripts/sendEmail';
 import type { SendEmailInput } from '@schema/email';
 import { defaultValue } from '@/config';
+import { getURLArgs } from '@/scripts/urlArgs';
 
-const props = defineProps<SendEmailRouteProps>();
-
-function withDefaultValues(values: string[] | undefined, defaults: string[]): string[] {
-  const nextValues = values ? [...values] : [];
-  const existingValues = new Set(nextValues.map((value) => value.trim().toUpperCase()));
-  return [...defaults.filter((value) => !existingValues.has(value.trim().toUpperCase())), ...nextValues];
-}
-
-const toList = ref<string[]>(props.to ? [...props.to] : []);
-const ccList = ref<string[]>(withDefaultValues(props.cc, defaultValue.sendEmail.cc));
-const bccList = ref<string[]>(props.bcc ? [...props.bcc] : [...defaultValue.sendEmail.bcc]);
+const args = getURLArgs({
+  title: { type: 'string' },
+  content: { type: 'string' },
+  to: { type: 'array' },
+  toInput: { type: 'string' },
+  cc: { type: 'array', default: defaultValue.sendEmail.cc },
+  ccInput: { type: 'string' },
+  bcc: { type: 'array', default: defaultValue.sendEmail.bcc },
+  bccInput: { type: 'string' },
+  contentType: { type: 'choice', values: ['text', 'html'], default: 'text' },
+});
 const toResolved = ref<string[]>([]);
 const ccResolved = ref<string[]>([]);
 const bccResolved = ref<string[]>([]);
@@ -81,14 +84,11 @@ const bccUnresolved = ref<string[]>([]);
 const toPending = ref(false);
 const ccPending = ref(false);
 const bccPending = ref(false);
-const subject = ref(props.title || '');
-const contentType = ref<'text' | 'html'>('text');
-const body = ref(props.content || '');
 const previewHtml = ref('');
 
 function validateBeforeBuild(): void {
-  if (!subject.value.trim()) throw new Error('标题不能为空');
-  if (!body.value.trim()) throw new Error('正文不能为空');
+  if (!args.title.trim()) throw new Error('标题不能为空');
+  if (!args.content.trim()) throw new Error('正文不能为空');
   if (toPending.value || ccPending.value || bccPending.value) {
     throw new Error('呼号邮箱仍在查询中，请稍后重试');
   }
@@ -119,9 +119,9 @@ function buildPayload(): SendEmailInput {
     to: toResolved.value,
     cc: ccResolved.value,
     bcc: bccResolved.value,
-    subject: subject.value.trim(),
-    body: body.value,
-    contentType: contentType.value,
+    subject: args.title.trim(),
+    body: args.content,
+    contentType: args.contentType,
   };
 }
 

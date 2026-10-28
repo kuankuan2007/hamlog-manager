@@ -9,7 +9,7 @@
       <p>发送日期：{{ record.sentAt }}</p>
       <p>
         邮件状态：
-        <select v-model="status" name="status" required>
+        <select v-model="args.status" name="status" required>
           <option value="received">已收到</option>
           <option value="returned">已退回</option>
           <option value="not_received">未收到</option>
@@ -17,7 +17,7 @@
       </p>
       <p>
         确认日期：
-        <input v-model="confirmedAt" type="date" name="confirmedAt" required />
+        <input v-model="args.confirmedAt" type="date" name="confirmedAt" required />
       </p>
       <p>
         <button type="submit" :disabled="submitting">
@@ -31,26 +31,27 @@
 <script setup lang="ts">
 import { selectQSLSendById } from '@/api/select';
 import { confirmQSLSend, type ConfirmQSLSendInput } from '@/api/update';
-import type { QSLSend, QSLSendStatus } from '@schema/qsl';
+import type { QSLSend } from '@schema/qsl';
 import { getCurrentTimeTagString } from '@util/time';
+import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
 
-const props = defineProps<{
-  id?: number;
-}>();
+const args = getURLArgs({
+  id: { type: 'number', integer: true, min: 1 },
+  status: { type: 'choice', values: ['received', 'returned', 'not_received'] },
+  confirmedAt: new DateTagField(),
+});
 
 const record = ref<QSLSend | null>(null);
-const status = ref<QSLSendStatus>('received');
-const confirmedAt = ref(getCurrentTimeTagString().slice(0, 10));
 const loading = ref(false);
 const error = ref<string | null>(null);
 const submitting = ref(false);
 
 async function submitForm() {
-  if (record.value === null) return;
+  if (record.value === null || !args.status) return;
   const options: ConfirmQSLSendInput = {
     id: record.value.id,
-    confirmedAt: confirmedAt.value,
-    status: status.value,
+    confirmedAt: args.confirmedAt,
+    status: args.status,
   };
 
   submitting.value = true;
@@ -65,20 +66,24 @@ async function submitForm() {
 }
 
 async function loadRecord() {
-  if (props.id === undefined) {
+  if (!Number.isSafeInteger(args.id) || args.id <= 0) {
     error.value = '缺少有效的 QSL 发件记录 ID';
+    record.value = null;
     return;
   }
 
   loading.value = true;
+  error.value = null;
   try {
-    record.value = await selectQSLSendById(props.id);
+    record.value = await selectQSLSendById(args.id);
     if (record.value === null) {
-      error.value = `未找到 ID 为 ${props.id} 的 QSL 发件记录`;
+      error.value = `未找到 ID 为 ${args.id} 的 QSL 发件记录`;
       return;
     }
-    status.value = record.value.status ?? 'received';
-    confirmedAt.value = record.value.confirmedAt ?? confirmedAt.value;
+    if (!args.status) args.status = record.value.status ?? 'received';
+    if (!args.confirmedAt) {
+      args.confirmedAt = record.value.confirmedAt ?? getCurrentTimeTagString().slice(0, 10);
+    }
   } catch (reason) {
     error.value = `加载失败：${reason instanceof Error ? reason.message : String(reason)}`;
   } finally {
@@ -86,7 +91,7 @@ async function loadRecord() {
   }
 }
 
-loadRecord();
+watch(() => args.id, () => void loadRecord(), { immediate: true });
 </script>
 
 <style scoped lang="scss">

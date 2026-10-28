@@ -1,7 +1,7 @@
 <template>
   <div class="box">
     <div class="button-list">
-      <button @click="showCallsign = !showCallsign">
+      <button @click="toggleCallsignVisibility">
         {{ showCallsign ? '隐藏呼号' : '显示呼号' }}
       </button>
       <a href="/new-log" target="_blank">新建日志</a>
@@ -27,9 +27,17 @@
 import type { CommunicationLog } from '@schema/communicationLog';
 import CommunicationLogTable from '@/components/dataDisplay/CommunicationLogTable.vue';
 import { selectCommunicationLogs } from '@/api/select';
+import { getURLArgs } from '@/scripts/urlArgs';
 
+const args = getURLArgs({
+  showCallsign: { type: 'choice', values: ['true', 'false'], default: 'true' },
+});
+const showCallsign = computed(() => args.showCallsign === 'true');
 const communicationLogList = ref<CommunicationLog[]>([]);
-const showCallsign = ref(true);
+
+function toggleCallsignVisibility(): void {
+  args.showCallsign = showCallsign.value ? 'false' : 'true';
+}
 
 selectCommunicationLogs()
   .then((logs) => {

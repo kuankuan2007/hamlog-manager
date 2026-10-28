@@ -27,13 +27,15 @@ Web 客户端位于 `src/`，使用 Vue 3、Vue Router、Vite 和 Sass。入口 
 
 ## 页面行为
 
+各页面通过 `src/scripts/urlArgs/` 的 `getURLArgs()` 管理可编辑状态。配置可使用 `{ type: 'string' | 'array' | 'number' | 'choice', default?: ... }`；`number` 支持整数和范围限制，`choice` 使用 `values` 限制候选值。所有字段可设 `readonly: true`；任一字段设为只读时，返回对象会被 Vue `readonly()` 包裹，应用代码不能修改它，但浏览器前进/后退仍会更新其值。默认 Field 位于 `urlArgs/fields/`，其中 `DateTagField` 和 `DateTimeTagField` 分别严格处理 `yyyy-mm-dd` 与 `yyyy-mm-dd hh:mm`。可通过继承 `Field` 自定义解析和序列化规则并直接作为配置值传入。`string` 参数读取最后一个同名值，`array` 参数会合并重复参数及逗号分隔值并去重。表单、筛选和选择状态的变化同步到当前 URL；浏览器前进/后退也会更新页面状态。未由页面管理的 query 参数会保留，默认表单值也会写入 URL。
+
 ### 首页
 
-首页读取第一页通联记录。界面可切换呼号显示，并可生成、复制中文或英文通联信息。
+首页读取第一页通联记录。界面可切换呼号显示，并可生成、复制中文或英文通联信息；呼号显隐状态保存在 URL 中。
 
 ### 呼号搜索
 
-输入变化时调用模糊搜索接口。新请求发出前会用 `AbortController` 取消上一请求，避免较旧响应覆盖最新输入；支持浏览器 CSS Highlights 时会高亮匹配文本。
+搜索词保存在 URL 中；输入变化时调用模糊搜索接口。新请求发出前会用 `AbortController` 取消上一请求，避免较旧响应覆盖最新输入；支持浏览器 CSS Highlights 时会高亮匹配文本。
 
 ### 呼号详情
 
@@ -41,13 +43,13 @@ Web 客户端位于 `src/`，使用 Vue 3、Vue Router、Vite 和 Sass。入口 
 
 ### 新通联
 
-表单默认使用当前 UTC 时间标签。当前 UI 中模式类型和输入组件仅提供 `FM`、`AM`、`CW`，但服务端共享 Schema 接受任意非空模式字符串。输入组件还包括频率、信号报告、时间和时区处理。
+表单默认使用当前 UTC 时间标签。呼号、时间、时区、频率、信号报告、模式和摘要均保存在 URL 中。当前 UI 中模式类型和输入组件仅提供 `FM`、`AM`、`CW`，但服务端共享 Schema 接受任意非空模式字符串。输入组件还包括频率、信号报告、时间和时区处理。
 
 ### 新增 QSL 收发记录
 
-`NewQSLSend` 和 `NewQSLReceive` 分别提交 QSL 发件与收件记录，日期默认使用当前 UTC 日期。两个页面均支持通过 `?callsign=JA1ABC` 预填目标呼号，并在提交前使用共享 Schema 进行浏览器端校验。
+`NewQSLSend` 和 `NewQSLReceive` 分别提交 QSL 发件与收件记录，日期默认使用当前 UTC 日期。呼号、日期及发件快递单号均保存在 URL 中，并在提交前使用共享 Schema 进行浏览器端校验。
 
-`ConfirmQSLSend` 通过 `?id={id}` 加载唯一一条 QSL 发件记录，可将状态设为“已收到”“已退回”或“未收到”。已有确认值会用于初始化表单，否则确认日期默认使用当前 UTC 日期。
+`ConfirmQSLSend` 通过 `?id={id}` 加载唯一一条 QSL 发件记录，可将状态设为“已收到”“已退回”或“未收到”。状态与确认日期保存在 URL 中；没有 URL 值时，有记录的确认值优先，否则确认日期默认使用当前 UTC 日期。
 
 `QslManager` 并行加载全部 QSL 发件与收件记录并显示公开 ID。每条发件记录提供按 ID 确认或更新的快捷链接。
 
@@ -57,11 +59,11 @@ Web 客户端位于 `src/`，使用 Vue 3、Vue Router、Vite 和 Sass。入口 
 
 ### 地址管理
 
-`AddressList` 分页聚合加载全部地址并按表格展示。`NewAddress` 支持 `?callsign=JA1ABC` 预填呼号，提交前使用共享 Schema 做浏览器端校验。`EditAddress` 按呼号载入现有地址回填表单；该呼号无地址记录时自动切换为新建模式。两者提交均走地址 upsert 接口。
+`AddressList` 分页聚合加载全部地址并按表格展示，待打印呼号勾选保存在 URL 中。`NewAddress` 将呼号、邮编、地址和收件人信息保存在 URL 中，提交前使用共享 Schema 做浏览器端校验。`EditAddress` 按呼号载入现有地址回填表单，编辑字段保存在 URL 中；该呼号无地址记录时自动切换为新建模式。两者提交均走地址 upsert 接口。
 
 ### 手动更新邮箱
 
-`ManualEmail` 支持 `?callsign=` 或 `?email=` 预填，提交后调用手动更新接口写入邮箱缓存（来源固定为 `manual`）。呼号详情页和收件人列表的“手动更新”链接均指向此页。
+`ManualEmail` 的呼号和邮箱字段保存在 URL 中，提交后调用手动更新接口写入邮箱缓存（来源固定为 `manual`）。呼号详情页和收件人列表的“手动更新”链接均指向此页。
 
 ### 准备邮件
 

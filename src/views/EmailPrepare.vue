@@ -59,7 +59,8 @@ import {
   createQSLSentMailContent,
 } from '@/scripts/mailContent';
 import { selfInfoData } from '@/scripts/selfInfo';
-import { buildSendEmailHref, type EmailPrepareRouteProps } from '@/scripts/sendEmail';
+import { buildSendEmailHref } from '@/scripts/sendEmail';
+import { getURLArgs } from '@/scripts/urlArgs';
 
 type PreparedSource =
   | { kind: 'qslSend'; record: QSLSend }
@@ -73,7 +74,11 @@ interface PreparedEmail {
   source: PreparedSource;
 }
 
-const props = defineProps<EmailPrepareRouteProps>();
+const args = getURLArgs({
+  qslSendId: { type: 'number', integer: true, min: 1, readonly: true },
+  qslReceiveId: { type: 'number', integer: true, min: 1, readonly: true },
+  communicationLogId: { type: 'number', integer: true, min: 1, readonly: true },
+});
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -189,21 +194,24 @@ async function loadPreparedEmail(): Promise<void> {
   error.value = null;
   prepared.value = null;
   try {
-    const candidateCount = [props.qslSendId, props.qslReceiveId, props.communicationLogId].filter(
+    const qslSendId = args.qslSendId > 0 ? args.qslSendId : undefined;
+    const qslReceiveId = args.qslReceiveId > 0 ? args.qslReceiveId : undefined;
+    const communicationLogId = args.communicationLogId > 0 ? args.communicationLogId : undefined;
+    const candidateCount = [qslSendId, qslReceiveId, communicationLogId].filter(
       (value): value is number => value !== undefined
     ).length;
     if (candidateCount !== 1) throw new Error('必须且只能提供一个邮件准备参数');
 
-    if (props.qslSendId !== undefined) {
-      prepared.value = await prepareQslSendEmail(props.qslSendId);
+    if (qslSendId !== undefined) {
+      prepared.value = await prepareQslSendEmail(qslSendId);
       return;
     }
-    if (props.qslReceiveId !== undefined) {
-      prepared.value = await prepareQslReceiveEmail(props.qslReceiveId);
+    if (qslReceiveId !== undefined) {
+      prepared.value = await prepareQslReceiveEmail(qslReceiveId);
       return;
     }
-    if (props.communicationLogId !== undefined) {
-      prepared.value = await prepareQsoConfirmEmail(props.communicationLogId);
+    if (communicationLogId !== undefined) {
+      prepared.value = await prepareQsoConfirmEmail(communicationLogId);
       return;
     }
   } catch (reason) {
@@ -214,7 +222,7 @@ async function loadPreparedEmail(): Promise<void> {
 }
 
 watch(
-  () => [props.qslSendId, props.qslReceiveId, props.communicationLogId],
+  () => [args.qslSendId, args.qslReceiveId, args.communicationLogId],
   () => {
     void loadPreparedEmail();
   },

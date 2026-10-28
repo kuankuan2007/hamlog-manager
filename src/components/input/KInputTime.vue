@@ -19,7 +19,7 @@ import KInputTimezoneRaw from './KInputTimezone.vue';
 
 const modelValue = defineModel<string>('modelValue', { default: () => getCurrentTimeTagString() });
 
-const timezone = ref(getLocalTimeZoneOffsetHours());
+const timezone = defineModel<number>('timezone', { default: getLocalTimeZoneOffsetHours });
 const timeObject = computed({
   get: () => timeTagStringToPlainDateTime(modelValue.value),
   set: (value: Temporal.PlainDateTime) => {

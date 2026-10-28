@@ -25,7 +25,7 @@
           </thead>
           <tbody>
             <tr v-for="address in addresses" :key="address.callsign + address.updatedBy">
-              <td><input type="checkbox" name="callsigns" :value="address.callsign" /></td>
+              <td><input v-model="args.callsigns" type="checkbox" name="callsigns" :value="address.callsign" /></td>
               <td>
                 <RouterLink :to="`/callsign/${encodeURIComponent(address.callsign)}`">
                   {{ address.callsign }}
@@ -57,7 +57,9 @@
 import { selectAllAddresses } from '@/api/select';
 import type { Address } from '@schema/address';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
+import { getURLArgs } from '@/scripts/urlArgs';
 
+const args = getURLArgs({ callsigns: { type: 'array' } });
 const addresses = ref<Address[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -76,14 +78,13 @@ async function loadAddresses(): Promise<void> {
 
 loadAddresses();
 
-function formSubmit(e: SubmitEvent): void {
-  const formData = new FormData(e.target as HTMLFormElement);
-  if (formData.getAll('callsigns').length === 0) {
+function formSubmit(): void {
+  if (args.callsigns.length === 0) {
     alert('请选择要打印的地址。');
     return;
   }
   window.open(
-    `/address-print?callsigns=${encodeURIComponent(formData.getAll('callsigns').join(','))}`,
+    `/address-print?callsigns=${encodeURIComponent(args.callsigns.join(','))}`,
     '_blank'
   );
 }

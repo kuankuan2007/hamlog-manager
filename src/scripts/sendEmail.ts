@@ -8,21 +8,11 @@ export interface SendEmailLinkOptions {
   bcc?: EmailRecipientInput;
 }
 
-export interface SendEmailRouteProps {
-  title?: string;
-  content?: string;
-  to?: string[];
-  cc?: string[];
-  bcc?: string[];
-}
-
 export interface EmailPrepareLinkOptions {
   qslSendId?: number;
   qslReceiveId?: number;
   communicationLogId?: number;
 }
-
-export type EmailPrepareRouteProps = EmailPrepareLinkOptions;
 
 function splitRecipientValue(value: string): string[] {
   return value
@@ -35,26 +25,6 @@ export function normalizeEmailRecipients(value: EmailRecipientInput): string[] {
   if (value === undefined) return [];
   const values = Array.isArray(value) ? value : [value];
   return values.flatMap(splitRecipientValue);
-}
-
-export function normalizeEmailRouteText(value: unknown): string | undefined {
-  if (typeof value === 'string') return value;
-  if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
-  return undefined;
-}
-
-export function normalizeEmailRouteRecipients(value: unknown): string[] | undefined {
-  if (typeof value === 'string') {
-    const recipients = normalizeEmailRecipients(value);
-    return recipients.length ? recipients : undefined;
-  }
-  if (Array.isArray(value)) {
-    const recipients = normalizeEmailRecipients(
-      value.filter((item): item is string => typeof item === 'string')
-    );
-    return recipients.length ? recipients : undefined;
-  }
-  return undefined;
 }
 
 export function buildSendEmailHref(options: SendEmailLinkOptions): string {

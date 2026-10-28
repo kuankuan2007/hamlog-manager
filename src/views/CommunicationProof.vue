@@ -7,7 +7,7 @@
             对方单位名称
             <input
               class="recipient-input"
-              v-model.trim="recipientOrganization"
+              v-model.trim="args.recipientOrganization"
               type="text"
               placeholder="请输入对方单位名称"
             />
@@ -17,7 +17,7 @@
         <div>
           <label>
             称呼
-            <select v-model="recipientName">
+            <select v-model="args.recipientName">
               <option v-for="name in recipientNameList" :key="name" :value="name">
                 {{ name }}
               </option>
@@ -38,7 +38,7 @@
           <div class="search-row">
             <label>
               按呼号搜索
-              <input v-model.trim="searchQuery" type="search" placeholder="输入完整或部分呼号" />
+              <input v-model.trim="args.search" type="search" placeholder="输入完整或部分呼号" />
             </label>
           </div>
           <div v-if="hasSearched" ref="searchPopover" class="search-popover">
@@ -123,11 +123,11 @@
         <hr />
       </header>
       <h1>通联证明</h1>
-      <p class="recipient">致{{ recipientOrganization }}：</p>
+      <p class="recipient">致{{ args.recipientOrganization }}：</p>
       <div class="proof-content">
         <p class="content">
           兹证明，本台（呼号：{{ selfInfoData.callsign }}）与{{
-            recipientName
+            args.recipientName
           }}相关业余无线电台的通联记录如下：
         </p>
 
@@ -160,7 +160,7 @@
         </table>
         <p v-else-if="!error" class="empty">请在页面上方搜索并选择通联记录。</p>
         <p class="content">根据《业余无线电台管理办办法》第三十六条之规定，我台将如实记录并保留上述通联记录并保留2年以上，以备查验。</p>
-        <p class="content">我台对与{{ recipientName }}的通联表示诚挚的感谢，并期待未来能有更多的合作与交流的机会。</p>
+        <p class="content">我台对与{{ args.recipientName }}的通联表示诚挚的感谢，并期待未来能有更多的合作与交流的机会。</p>
         <p class="content">特此证明。</p>
       </div>
 
@@ -181,18 +181,16 @@ import {
 } from '@/api/select';
 import { highlight } from '@/scripts/searchHighlight';
 import { selfInfoData } from '@/scripts/selfInfo';
-import { useRoute, useRouter } from 'vue-router';
+import { getURLArgs } from '@/scripts/urlArgs';
 
-const props = defineProps<{
-  ids?: string;
-}>();
-
-const route = useRoute();
-const router = useRouter();
-const recipientOrganization = ref('');
+const args = getURLArgs({
+  ids: { type: 'array' },
+  recipientOrganization: { type: 'string' },
+  recipientName: { type: 'choice', values: ['贵单位', '您'], default: '贵单位' },
+  search: { type: 'string' },
+});
 const printData = ref<CommunicationLog[]>([]);
 const error = ref('');
-const searchQuery = ref('');
 const searchResults = ref<CommunicationLogSearchResult[]>([]);
 const searchError = ref('');
 const searchLoading = ref(false);
@@ -201,8 +199,6 @@ const logsByCallsign = ref<Record<string, CommunicationLog[]>>({});
 const searchPopover = useTemplateRef<HTMLDivElement>('searchPopover');
 
 const recipientNameList = ['贵单位', '您'] as const;
-type RecipientName = (typeof recipientNameList)[number];
-const recipientName = ref<RecipientName>(recipientNameList[0]);
 
 let requestVersion = 0;
 let searchController: AbortController | undefined;
@@ -211,20 +207,20 @@ const now = new Date();
 const issueDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
 
 watch(
-  () => props.ids,
+  () => args.ids.join(','),
   async (value) => {
     const selectedIds = printData.value.map((record) => record.id).join(',');
-    if ((value ?? '') === selectedIds) return;
+    if (value === selectedIds) return;
 
     const currentVersion = ++requestVersion;
     printData.value = [];
     error.value = '';
 
-    if (!value?.trim()) {
+    if (!value) {
       return;
     }
 
-    const idTexts = value.split(',').map((id) => id.trim());
+    const idTexts = value.split(',');
     const ids = idTexts.map(Number);
     if (
       idTexts.some((id) => !/^\d+$/.test(id)) ||
@@ -255,7 +251,7 @@ watch(
 );
 
 async function searchLogs(): Promise<void> {
-  const query = searchQuery.value.trim();
+  const query = args.search.trim();
   searchController?.abort();
   searchController = undefined;
   searchLoading.value = false;
@@ -289,20 +285,20 @@ async function searchLogs(): Promise<void> {
   }
 }
 
-watch(searchQuery, () => {
+watch(() => args.search, () => {
   void searchLogs();
 });
 
 function highlightSearchResults(): void {
   const elements = searchPopover.value?.querySelectorAll('.callsign-data') ?? [];
-  highlight(searchQuery.value, Array.from(elements), 'search-results');
+  highlight(args.search, Array.from(elements), 'search-results');
 }
 
 onMounted(highlightSearchResults);
 onUpdated(highlightSearchResults);
 
 function isSelected(id: number): boolean {
-  return printData.value.some((record) => record.id === id);
+  return args.ids.includes(String(id));
 }
 
 function toggleRecord(record: CommunicationLog): void {
@@ -311,22 +307,12 @@ function toggleRecord(record: CommunicationLog): void {
     removeRecord(record.id);
     return;
   }
-  printData.value = [...printData.value, record];
-  syncIdsQuery();
+  args.ids = [...args.ids, String(record.id)];
 }
 
 function removeRecord(id: number): void {
   error.value = '';
-  printData.value = printData.value.filter((record) => record.id !== id);
-  syncIdsQuery();
-}
-
-function syncIdsQuery(): void {
-  const ids = printData.value.map((record) => record.id).join(',');
-  const query = { ...route.query };
-  if (ids) query.ids = ids;
-  else delete query.ids;
-  void router.replace({ query });
+  args.ids = args.ids.filter((selectedId) => selectedId !== String(id));
 }
 
 function printProof(): void {

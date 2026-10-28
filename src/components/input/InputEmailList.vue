@@ -109,7 +109,7 @@ const pendingModel = defineModel<boolean>('pending', {
   default: false,
 });
 
-const inputValue = ref('');
+const inputValue = defineModel<string>('inputValue', { default: '' });
 const lookupByCallsign = reactive<Record<string, CallsignLookupState>>({});
 const lookupByEmail = reactive<Record<string, EmailLookupState>>({});
 

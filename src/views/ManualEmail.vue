@@ -4,11 +4,11 @@
     <form @submit.prevent="submitForm">
       <p>
         呼号：
-        <KInputCallsign v-model="callsignValue" required />
+        <KInputCallsign v-model="args.callsign" required />
       </p>
       <p>
         邮箱：
-        <input v-model="emailValue" type="email" required />
+        <input v-model="args.email" type="email" required />
       </p>
       <p>来源：<strong>manual</strong></p>
       <p>
@@ -21,19 +21,14 @@
 <script setup lang="ts">
 import { manualUpdateEmail } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { getURLArgs } from '@/scripts/urlArgs';
 
-const props = defineProps<{
-  callsign?: string;
-  email?: string;
-}>();
-
-const callsignValue = ref(props.callsign || '');
-const emailValue = ref(props.email || '');
+const args = getURLArgs({ callsign: { type: 'string' }, email: { type: 'string' } });
 
 const submitForm = () => {
   manualUpdateEmail({
-    callsign: callsignValue.value,
-    email: emailValue.value,
+    callsign: args.callsign,
+    email: args.email,
   })
     .then(() => {
       alert('邮箱已更新');

@@ -18,19 +18,16 @@
 import type { Address } from '@schema/address';
 import { selectAddressesByCallsigns } from '@/api/select';
 import { selfInfoData } from '@/scripts/selfInfo';
-const props = defineProps<{
-  callsigns: string;
-}>();
+import { getURLArgs } from '@/scripts/urlArgs';
+
+const args = getURLArgs({ callsigns: { type: 'array', readonly: true } });
 const error = ref<string>();
-const callsignList = computed(() =>
-  props.callsigns ? props.callsigns.split(',').map((callsign) => callsign.trim()) : []
-);
 const printData = ref<Address[]>([]);
 
 async function loadPrintData(): Promise<void> {
-  printData.value = await selectAddressesByCallsigns(callsignList.value);
+  printData.value = await selectAddressesByCallsigns([...args.callsigns]);
 }
-watch(callsignList, loadPrintData, { immediate: true, deep: true });
+watch(() => args.callsigns, loadPrintData, { immediate: true, deep: true });
 </script>
 <style scoped lang="scss">
 .address-list {

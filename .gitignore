@@ -32,3 +32,4 @@ temp/
 /config/values.ts
 /config/photo.jpg
 .VSCodeCounter/
+/src/types/auto-imports.d.ts

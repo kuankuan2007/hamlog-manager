@@ -21,10 +21,13 @@
 import { highlight } from '@/scripts/searchHighlight.ts';
 
 const modelValue = defineModel<string>();
-const props = withDefaults(defineProps<{ searchResult?: T[]; enableSearch?: boolean; enableHighlight?: boolean }>(), {
-  enableSearch: true,
-  enableHighlight: true,
-});
+const props = withDefaults(
+  defineProps<{ searchResult?: T[]; enableSearch?: boolean; enableHighlight?: boolean }>(),
+  {
+    enableSearch: true,
+    enableHighlight: true,
+  }
+);
 
 const activeIndex = ref<number>(-1);
 
@@ -75,7 +78,11 @@ function handleKeyDown(event: KeyboardEvent) {
 const boxEle = useTemplateRef<HTMLDivElement>('boxEle');
 function highlightSearchResult(query: string) {
   if (!props.enableHighlight || !boxEle.value) return;
-  highlight(query, Array.from(boxEle.value?.querySelectorAll('.k-input-search-highlight') || []), 'search-results');
+  highlight(
+    query,
+    Array.from(boxEle.value?.querySelectorAll('.k-input-search-highlight') || []),
+    'search-results'
+  );
 }
 
 onUpdated(() => {
@@ -84,7 +91,6 @@ onUpdated(() => {
 onMounted(() => {
   highlightSearchResult(modelValue.value || '');
 });
-
 </script>
 <style scoped lang="scss">
 .input-search {

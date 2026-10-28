@@ -159,8 +159,14 @@
           </tbody>
         </table>
         <p v-else-if="!error" class="empty">请在页面上方搜索并选择通联记录。</p>
-        <p class="content">根据《业余无线电台管理办办法》第三十六条之规定，我台将如实记录并保留上述通联记录并保留2年以上，以备查验。</p>
-        <p class="content">我台对与{{ args.recipientName }}的通联表示诚挚的感谢，并期待未来能有更多的合作与交流的机会。</p>
+        <p class="content">
+          根据《业余无线电台管理办办法》第三十六条之规定，我台将如实记录并保留上述通联记录并保留2年以上，以备查验。
+        </p>
+        <p class="content">
+          我台对与{{
+            args.recipientName
+          }}的通联表示诚挚的感谢，并期待未来能有更多的合作与交流的机会。
+        </p>
         <p class="content">特此证明。</p>
       </div>
 
@@ -285,9 +291,12 @@ async function searchLogs(): Promise<void> {
   }
 }
 
-watch(() => args.search, () => {
-  void searchLogs();
-});
+watch(
+  () => args.search,
+  () => {
+    void searchLogs();
+  }
+);
 
 function highlightSearchResults(): void {
   const elements = searchPopover.value?.querySelectorAll('.callsign-data') ?? [];

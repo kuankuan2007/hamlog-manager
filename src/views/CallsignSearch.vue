@@ -3,7 +3,10 @@
     <h1>呼号搜索</h1>
     <p class="search-box">
       <KInputCallsign v-model="args.query" placeholder="输入呼号进行搜索" :enable-search="false" />
-      <a :href="`/new-log?callsign=${encodeURIComponent(args.query)}`" class="new-log-button" target="_blank"
+      <a
+        :href="`/new-log?callsign=${encodeURIComponent(args.query)}`"
+        class="new-log-button"
+        target="_blank"
         >新增通联记录</a
       >
     </p>
@@ -14,7 +17,10 @@
           <h3 class="callsign-data">{{ item.callsign }}</h3>
           <p>
             <a :href="`/callsign/${item.callsign}`" class="detail-button" target="_blank">详情</a>
-            <a :href="`/new-log?callsign=${encodeURIComponent(item.callsign)}`" class="new-log-button" target="_blank"
+            <a
+              :href="`/new-log?callsign=${encodeURIComponent(item.callsign)}`"
+              class="new-log-button"
+              target="_blank"
               >新增通联记录</a
             >
           </p>
@@ -39,7 +45,7 @@ import { getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({ query: { type: 'string' } });
 const searchResult = ref<CommunicationLogSearchResult[]>([]);
-const resultListEle=useTemplateRef<HTMLUListElement>('resultListEle');
+const resultListEle = useTemplateRef<HTMLUListElement>('resultListEle');
 function highlightCallsign(callsign: string) {
   const elements = resultListEle.value?.querySelectorAll('.callsign-data') || [];
   highlight(callsign, Array.from(elements), 'search-results');
@@ -56,14 +62,18 @@ function updateSearchResult(query: string) {
     }
   });
 }
-watch(() => args.query, async (newVal) => {
-  if (newVal) {
-    updateSearchResult(newVal);
-  } else {
-    abortController?.abort();
-    searchResult.value = [];
-  }
-}, { immediate: true });
+watch(
+  () => args.query,
+  async (newVal) => {
+    if (newVal) {
+      updateSearchResult(newVal);
+    } else {
+      abortController?.abort();
+      searchResult.value = [];
+    }
+  },
+  { immediate: true }
+);
 onMounted(() => {
   highlightCallsign(args.query);
 });

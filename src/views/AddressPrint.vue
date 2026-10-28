@@ -8,7 +8,9 @@
         <p class="address">{{ address.address }}</p>
         <p class="recipient">{{ address.callsign }} {{ address.recipientName ?? '' }} 收</p>
         <p class="sender-address">{{ selfInfoData.address.address }}</p>
-        <p class="sender">{{ selfInfoData.callsign }} {{ selfInfoData.address.recipientName }} 寄</p>
+        <p class="sender">
+          {{ selfInfoData.callsign }} {{ selfInfoData.address.recipientName }} 寄
+        </p>
         <p class="sender-postal-code">{{ selfInfoData.address.postalCode }}</p>
       </li>
     </ol>

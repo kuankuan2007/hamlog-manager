@@ -32,7 +32,10 @@ export class ArrayField extends Field<string[]> {
   }
 
   parse(inArgs: string): void {
-    for (const value of inArgs.split(',').map((item) => item.trim()).filter(Boolean)) {
+    for (const value of inArgs
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)) {
       if (!this.value.includes(value)) this.value.push(value);
     }
   }
@@ -95,4 +98,3 @@ export class ChoiceField<T extends string> extends Field<T | ''> {
     return this.value === '' || this.values.includes(this.value) ? this.value : '';
   }
 }
-

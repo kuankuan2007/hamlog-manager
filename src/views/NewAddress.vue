@@ -7,7 +7,9 @@
         邮政编码：
         <input type="text" id="postalCode" name="postalCode" required v-model="args.postalCode" />
       </p>
-      <p>地址： <input type="text" id="address" name="address" required v-model="args.address" /></p>
+      <p>
+        地址： <input type="text" id="address" name="address" required v-model="args.address" />
+      </p>
       <p>
         收件人姓名：
         <input type="text" id="recipientName" name="recipientName" v-model="args.recipientName" />

@@ -9,7 +9,9 @@
 import type { RadioMode } from '@/types/data';
 import { defaultValue } from '@/config';
 
-const modelValue = defineModel<RadioMode>('modelValue', { default: () => defaultValue.newLog.mode });
+const modelValue = defineModel<RadioMode>('modelValue', {
+  default: () => defaultValue.newLog.mode,
+});
 const inputValue = computed({
   get: () => modelValue.value,
   set: (value: RadioMode) => {

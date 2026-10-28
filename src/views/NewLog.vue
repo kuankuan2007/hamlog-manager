@@ -7,7 +7,9 @@
       <p>
         <k-input-time v-model="args.time" v-model:timezone="args.timezone" />
       </p>
-      <p>FREQ: <k-input-freq v-model="args.frequency" /> MODE: <k-input-mode v-model="args.mode" /></p>
+      <p>
+        FREQ: <k-input-freq v-model="args.frequency" /> MODE: <k-input-mode v-model="args.mode" />
+      </p>
       <p>摘要：<input type="text" name="summary" v-model="args.summary" /></p>
       <p><button type="submit">提交</button></p>
     </form>
@@ -19,10 +21,7 @@ import KInputRs from '@/components/input/KInputRs.vue';
 import KInputMode from '@/components/input/KInputMode.vue';
 import KInputFreq from '@/components/input/KInputFreq.vue';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
-import {
-  getCurrentTimeTagString,
-  getLocalTimeZoneOffsetHours,
-} from '@util/time';
+import { getCurrentTimeTagString, getLocalTimeZoneOffsetHours } from '@util/time';
 import { type CreateCommunicationLogInput, newCommunicationLog } from '@/api/update';
 import { defaultValue } from '@/config';
 import { DateTimeTagField, getURLArgs } from '@/scripts/urlArgs';
@@ -30,7 +29,13 @@ import { DateTimeTagField, getURLArgs } from '@/scripts/urlArgs';
 const args = getURLArgs({
   callsign: { type: 'string' },
   time: new DateTimeTagField(getCurrentTimeTagString()),
-  timezone: { type: 'number', integer: true, min: -12, max: 14, default: getLocalTimeZoneOffsetHours() },
+  timezone: {
+    type: 'number',
+    integer: true,
+    min: -12,
+    max: 14,
+    default: getLocalTimeZoneOffsetHours(),
+  },
   rxReport: { type: 'number', integer: true, min: 11, max: 99, default: 59 },
   txReport: { type: 'number', integer: true, min: 11, max: 99, default: 59 },
   frequency: { type: 'number', default: defaultValue.newLog.frequency },

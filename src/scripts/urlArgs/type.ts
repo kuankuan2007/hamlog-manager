@@ -58,19 +58,20 @@ export type FieldConfig =
 
 export type URLArgsConfig = Record<string, FieldConfig>;
 
-export type FieldValue<T extends FieldConfig> = T extends Field<infer Value>
-  ? Value
-  : T extends StringFieldConfig
-    ? string
-    : T extends ArrayFieldConfig
-      ? string[]
-      : T extends NumberFieldConfig
-        ? number
-        : T extends ChoiceFieldConfig<infer Value>
-          ? T extends { default: string }
-            ? Value
-            : Value | ''
-          : never;
+export type FieldValue<T extends FieldConfig> =
+  T extends Field<infer Value>
+    ? Value
+    : T extends StringFieldConfig
+      ? string
+      : T extends ArrayFieldConfig
+        ? string[]
+        : T extends NumberFieldConfig
+          ? number
+          : T extends ChoiceFieldConfig<infer Value>
+            ? T extends { default: string }
+              ? Value
+              : Value | ''
+            : never;
 
 export type URLArgs<T extends URLArgsConfig> = {
   -readonly [Key in keyof T]: FieldValue<T[Key]>;

@@ -25,7 +25,14 @@
           </thead>
           <tbody>
             <tr v-for="address in addresses" :key="address.callsign + address.updatedBy">
-              <td><input v-model="args.callsigns" type="checkbox" name="callsigns" :value="address.callsign" /></td>
+              <td>
+                <input
+                  v-model="args.callsigns"
+                  type="checkbox"
+                  name="callsigns"
+                  :value="address.callsign"
+                />
+              </td>
               <td>
                 <RouterLink :to="`/callsign/${encodeURIComponent(address.callsign)}`">
                   {{ address.callsign }}
@@ -83,10 +90,7 @@ function formSubmit(): void {
     alert('请选择要打印的地址。');
     return;
   }
-  window.open(
-    `/address-print?callsigns=${encodeURIComponent(args.callsigns.join(','))}`,
-    '_blank'
-  );
+  window.open(`/address-print?callsigns=${encodeURIComponent(args.callsigns.join(','))}`, '_blank');
 }
 </script>
 

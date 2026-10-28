@@ -134,7 +134,7 @@ function getLookupLabel(response: Callsign2EmailResponse): string {
     ? '实时'
     : response.comeFrom === 'manual'
       ? '手动'
-      : response.lastUpdate ?? '缓存';
+      : (response.lastUpdate ?? '缓存');
   const owner = formatUpdatedBy(response.updatedBy);
   return owner ? `${owner} · ${source}` : source;
 }

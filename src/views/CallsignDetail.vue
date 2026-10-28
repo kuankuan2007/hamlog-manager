@@ -109,7 +109,7 @@ const emailSourceLabel = computed(() => {
     ? '实时'
     : emailInfo.value.comeFrom === 'manual'
       ? '手动'
-      : emailInfo.value.lastUpdate ?? '非实时';
+      : (emailInfo.value.lastUpdate ?? '非实时');
   const owner = formatUpdatedBy(emailInfo.value.updatedBy);
   return owner ? `${owner} · ${source}` : source;
 });

@@ -44,7 +44,9 @@ function updateSearchResult(query: string) {
       searchResult.value = res.map((resultItem) => ({
         value: resultItem.callsign,
         contactCount: resultItem.logs.length,
-        lastContactTime: tryToGetRelativeTimeString(resultItem.logs.toSorted((i) => i.time as unknown as number)[0].time),
+        lastContactTime: tryToGetRelativeTimeString(
+          resultItem.logs.toSorted((i) => i.time as unknown as number)[0].time
+        ),
       }));
     }
   });

@@ -91,7 +91,11 @@ async function loadRecord() {
   }
 }
 
-watch(() => args.id, () => void loadRecord(), { immediate: true });
+watch(
+  () => args.id,
+  () => void loadRecord(),
+  { immediate: true }
+);
 </script>
 
 <style scoped lang="scss">

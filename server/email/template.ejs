@@ -19,13 +19,13 @@
                 <img alt="" style="height: 100%;width: 100%;border-radius: 99999px;" src="<%= meta.myPhoto %>" />
             </td>
             <td>
-                <div style="font-size: 18px;font-weight: bold;"><%= meta.myCallsign %></div>
+                <div style="font-size: 18px;font-weight: bold;"><%= meta.emailSignature.main %></div>
             </td>
         </tr>
         <tr>
             <td>
-                <div style="font-size: 12px;">中国业余无线电台</div>
-                <div style="font-size: 12px;">Personal Amateur Radio Station OF P.R China</div>
+                <div style="font-size: 12px;"><%= meta.emailSignature.part1 %></div>
+                <div style="font-size: 12px;"><%= meta.emailSignature.part2 %></div>
             </td>
         </tr>
     </tbody>

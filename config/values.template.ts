@@ -34,6 +34,11 @@ export const selfInfo: SelfInfoConfig = {
   communicationProofIssuer: '证明人姓名或单位名称',
   // 本人常用邮箱
   email: 'you@example.com',
+  emailSignature: { // 可选：邮件签名，用于邮件正文与页脚
+    main: 'Your Name', // 可选：默认使用 callsign
+    part1: '中国业余无线电台', // 可选：默认使用 "中国业余无线电台"
+    part2: 'Individual Amateur Radio Station OF P.R China', // 可选：默认使用 "Individual Amateur Radio Station OF P.R China"
+  },
   // 可选：<> 包裹特殊呼号到邮箱的映射，键不区分大小写。
   // 正向：查询 <SELF> 返回对应邮箱；反向：查询对应邮箱返回 <SELF>。
   // 此类查询不访问缓存表和 QRZ.com，响应 comeFrom 为 config。

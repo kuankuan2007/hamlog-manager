@@ -97,6 +97,12 @@ export async function renderEmailTemplate(input: SendEmailInput): Promise<string
       myCallsign: selfInfo.callsign,
       myEmail: selfInfo.email,
       myPhoto: await getPhotoDataUrl(),
+      emailSignature: {
+        main: selfInfo.callsign,
+        part1: "中国业余无线电台",
+        part2: "Individual Amateur Radio Station OF P.R China",
+        ...(selfInfo.emailSignature ?? {}),
+      },
     }
   });
 }

@@ -18,6 +18,11 @@ export interface SelfInfoConfig {
   callsign: string;
   communicationProofIssuer: string;
   email: string;
+  emailSignature?: {
+    main?: string;
+    part1?: string;
+    part2?: string;
+  };
   emailAddresses?: Record<string, string>;
 }
 

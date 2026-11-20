@@ -101,7 +101,7 @@ export async function renderEmailTemplate(input: SendEmailInput): Promise<string
         main: selfInfo.callsign,
         part1: "中国业余无线电台",
         part2: "Individual Amateur Radio Station OF P.R China",
-        ...(selfInfo.emailSignature ?? {}),
+        ...(selfInfo.emailSignature),
       },
     }
   });

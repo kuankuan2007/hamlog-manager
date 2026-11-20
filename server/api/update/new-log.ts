@@ -22,7 +22,7 @@ export const newLogRouter = new Router({
       );
       return;
     }
-    await insertCommunicationLog(input);
+    ctx.data = await insertCommunicationLog(input);
     ctx.statue = doneStatue();
   },
 });

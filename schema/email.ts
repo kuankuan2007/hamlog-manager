@@ -6,6 +6,14 @@ export interface ManualEmailInput {
   email: string;
 }
 
+export interface CallsignEmailCache {
+  callsign: string;
+  email: string;
+  updatedAt: string;
+  provider: string;
+  updatedBy: string;
+}
+
 export type EmailContentType = 'text' | 'html';
 
 export interface SendEmailInput {

@@ -379,7 +379,7 @@ export const email: SmtpConfig = {
 
 ## 写入
 
-请求体为 JSON。所有对象禁止未声明字段，呼号会在数据库层转为大写。
+请求体为 JSON。所有对象禁止未声明字段，呼号会在数据库层转为大写。各写入接口成功后，响应体的 `data` 为写入或更新后的完整记录：`new-log` 返回 `CommunicationLog`（含新分配的 `id`），`new-qsl-send` 与 `confirm-qsl-send` 返回 `QSLSend`（含 `id`），`new-qsl-receive` 返回 `QSLReceive`（含 `id`），`new-address` 返回 `Address`，`manual-email` 返回写入的呼号邮箱缓存记录。
 
 ### 新增通联
 

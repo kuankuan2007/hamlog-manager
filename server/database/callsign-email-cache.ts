@@ -1,13 +1,8 @@
 import { normalizeCallsign, publicGet, publicRun } from './index';
 import { selfInfo } from '@server/config';
+import type { CallsignEmailCache } from '@schema/email';
 
-export interface CallsignEmailCache {
-	callsign: string;
-	email: string;
-	updatedAt: string;
-	provider: string;
-	updatedBy: string;
-}
+export type { CallsignEmailCache };
 
 interface CallsignEmailCacheRow extends CallsignEmailCache {
 	id: number;

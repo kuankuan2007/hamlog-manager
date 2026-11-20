@@ -14,7 +14,7 @@ export async function getData<T>(response: Promise<Response> | Response): Promis
   }
   return body.data as T;
 }
-export async function sendData<T>(url: string, data: T) {
+export async function sendData<T, R = void>(url: string, data: T): Promise<R> {
   const _response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -23,8 +23,9 @@ export async function sendData<T>(url: string, data: T) {
   if (!_response.ok) {
     throw new Error(errorMessageFromResponse(_response.status, _response.statusText));
   }
-  const body = (await _response.json()) as ServerResponse<T>;
+  const body = (await _response.json()) as ServerResponse<R>;
   if (!body.ok) {
     throw new Error(errorMessageFromResponse(body.code, body.msg));
   }
+  return body.data as R;
 }

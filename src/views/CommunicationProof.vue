@@ -186,6 +186,7 @@ import {
   selectCommunicationLogsByCallsign,
 } from '@/api/select';
 import { highlight } from '@/scripts/searchHighlight';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { selfInfoData } from '@/scripts/selfInfo';
 import { getURLArgs } from '@/scripts/urlArgs';
 
@@ -305,6 +306,13 @@ function highlightSearchResults(): void {
 
 onMounted(highlightSearchResults);
 onUpdated(highlightSearchResults);
+onUnmounted(
+  broadcastEventCenter.onUpdate((data) => {
+    if (data.type === 'log' && args.search.trim()) {
+      void searchLogs();
+    }
+  })
+);
 
 function isSelected(id: number): boolean {
   return args.ids.includes(String(id));

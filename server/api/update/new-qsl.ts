@@ -38,7 +38,7 @@ export const newQSLSendRouter = new Router({
 			ctx.statue = invalidDateInputStatue(validateCreateQSLSendInput.errors, 'sentAt');
 			return;
 		}
-		await insertQSLSend(input);
+		ctx.data = await insertQSLSend(input);
 		ctx.statue = doneStatue();
 	},
 });
@@ -56,7 +56,7 @@ export const newQSLReceiveRouter = new Router({
 			ctx.statue = invalidDateInputStatue(validateCreateQSLReceiveInput.errors, 'receivedAt');
 			return;
 		}
-		await insertQSLReceive(input);
+		ctx.data = await insertQSLReceive(input);
 		ctx.statue = doneStatue();
 	},
 });
@@ -75,7 +75,7 @@ export const confirmQSLSendRouter = new Router({
 			return;
 		}
 		try {
-			await confirmQSLSend(input);
+			ctx.data = await confirmQSLSend(input);
 			ctx.statue = doneStatue();
 		} catch (error) {
 			if (error instanceof QSLSendNotFoundError) {

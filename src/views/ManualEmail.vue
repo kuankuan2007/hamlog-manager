@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { manualUpdateEmail } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({ callsign: { type: 'string' }, email: { type: 'string' } });
@@ -30,7 +31,12 @@ const submitForm = () => {
     callsign: args.callsign,
     email: args.email,
   })
-    .then(() => {
+    .then((record) => {
+      broadcastEventCenter.emit('update', {
+        type: 'email',
+        callsign: record.callsign,
+        email: record.email,
+      });
       alert('邮箱已更新');
       window.close();
     })

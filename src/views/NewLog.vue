@@ -24,6 +24,7 @@ import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { getCurrentTimeTagString, getLocalTimeZoneOffsetHours } from '@util/time';
 import { type CreateCommunicationLogInput, newCommunicationLog } from '@/api/update';
 import { defaultValue } from '@/config';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { DateTimeTagField, getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({
@@ -54,7 +55,12 @@ const submitForm = () => {
     mode: args.mode,
   };
   newCommunicationLog(options)
-    .then(() => {
+    .then((record) => {
+      broadcastEventCenter.emit('update', {
+        type: 'log',
+        id: record.id,
+        callsign: record.callsign,
+      });
       alert('提交成功');
     })
     .catch((err) => {

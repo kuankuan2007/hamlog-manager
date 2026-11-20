@@ -70,6 +70,7 @@
 import { callsign2email } from '@/api/auto';
 import type { Callsign2EmailResponse } from '@/api/schema';
 import { selectCallsignByEmail } from '@/api/select';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
 
 type CallsignLookupState = {
@@ -398,6 +399,31 @@ watch(
     void syncCallsignLookups(value);
   },
   { immediate: true, deep: true }
+);
+
+async function refreshAfterEmailUpdate(callsign: string, email: string): Promise<void> {
+  const normalizedCallsign = normalizeValue(callsign).toUpperCase();
+  const callsignKeys = Object.keys(lookupByCallsign).filter(
+    (key) => normalizeValue(key).toUpperCase() === normalizedCallsign
+  );
+  const affectedEmails = new Set<string>();
+  if (isEmailValue(email)) affectedEmails.add(normalizeEmailKey(email));
+  for (const [key, state] of Object.entries(lookupByEmail)) {
+    if (state.callsign && state.callsign.toUpperCase() === normalizedCallsign) {
+      affectedEmails.add(key);
+    }
+  }
+  await Promise.all([
+    ...callsignKeys.map((key) => resolveCallsign(key, false)),
+    ...[...affectedEmails].map((emailKey) => resolveEmail(emailKey)),
+  ]);
+}
+
+onUnmounted(
+  broadcastEventCenter.onUpdate((data) => {
+    if (data.type !== 'email') return;
+    void refreshAfterEmailUpdate(data.callsign, data.email);
+  })
 );
 </script>
 

@@ -28,7 +28,7 @@ export const manualEmailRouter = new Router({
       return;
     }
 
-    await insertCallsignEmailCache({
+    ctx.data = await insertCallsignEmailCache({
       callsign: normalizedCallsign,
       email,
       updatedAt: getCurrentTimeTagString(),

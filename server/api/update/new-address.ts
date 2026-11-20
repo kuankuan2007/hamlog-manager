@@ -27,7 +27,7 @@ export const newAddressRouter = new Router({
 			...request,
 			updatedAt: request.updatedAt ?? getCurrentTimeTagString().slice(0, 10),
 		};
-		await upsertAddress(input);
+		ctx.data = await upsertAddress(input);
 		ctx.statue = doneStatue();
 	},
 });

@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import { selectAllAddresses } from '@/api/select';
 import type { Address } from '@schema/address';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
 import { getURLArgs } from '@/scripts/urlArgs';
 
@@ -84,6 +85,14 @@ async function loadAddresses(): Promise<void> {
 }
 
 loadAddresses();
+
+onUnmounted(
+  broadcastEventCenter.onUpdate((data) => {
+    if (data.type === 'address') {
+      void loadAddresses();
+    }
+  })
+);
 
 function formSubmit(): void {
   if (args.callsigns.length === 0) {

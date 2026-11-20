@@ -89,6 +89,7 @@ import QslSendTable from '@/components/dataDisplay/QslSendTable.vue';
 import { selectCallsignDetail, type CallsignDetail } from '@/api/select';
 import type { Callsign2EmailResponse } from '@/api/schema';
 import { copyText } from '@kuankuan/assist-2026/utils/copyText';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
 
 const detail = ref<CallsignDetail | null>(null);
@@ -158,6 +159,17 @@ watch(
     getEmail(callsign, false);
   },
   { immediate: true }
+);
+
+onUnmounted(
+  broadcastEventCenter.onUpdate((data) => {
+    if (data.callsign.toUpperCase() !== props.callsign.toUpperCase()) return;
+    if (data.type === 'email') {
+      getEmail(props.callsign, false);
+      return;
+    }
+    getDetails(props.callsign);
+  })
 );
 
 function copyEmail() {

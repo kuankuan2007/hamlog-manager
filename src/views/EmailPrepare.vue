@@ -58,6 +58,7 @@ import {
   createQSOConfirmMailContent,
   createQSLSentMailContent,
 } from '@/scripts/mailContent';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { selfInfoData } from '@/scripts/selfInfo';
 import { buildSendEmailHref } from '@/scripts/sendEmail';
 import { getURLArgs } from '@/scripts/urlArgs';
@@ -227,6 +228,34 @@ watch(
     void loadPreparedEmail();
   },
   { immediate: true }
+);
+
+onUnmounted(
+  broadcastEventCenter.onUpdate((data) => {
+    const source = prepared.value?.source;
+    if (!source) return;
+
+    let relevant = false;
+    if (source.kind === 'qslSend') {
+      relevant = data.type === 'qsl-send' && data.id === args.qslSendId;
+    } else if (source.kind === 'qslReceive') {
+      relevant =
+        (data.type === 'qsl-receive' && data.id === args.qslReceiveId) ||
+        (data.type === 'qsl-send' &&
+          data.callsign.toUpperCase() === source.record.callsign.toUpperCase());
+    } else {
+      relevant =
+        (data.type === 'log' && data.id === args.communicationLogId) ||
+        ((data.type === 'qsl-send' ||
+          data.type === 'qsl-receive' ||
+          data.type === 'address') &&
+          data.callsign.toUpperCase() === source.record.callsign.toUpperCase());
+    }
+
+    if (relevant) {
+      void loadPreparedEmail();
+    }
+  })
 );
 </script>
 

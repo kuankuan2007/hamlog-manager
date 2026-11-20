@@ -14,6 +14,7 @@
 <script setup lang="ts">
 import { type CreateQSLReceiveInput, newQSLReceive } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getCurrentTimeTagString } from '@util/time';
 import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
 
@@ -31,7 +32,12 @@ async function submitForm() {
 
   submitting.value = true;
   try {
-    await newQSLReceive(options);
+    const record = await newQSLReceive(options);
+    broadcastEventCenter.emit('update', {
+      type: 'qsl-receive',
+      id: record.id,
+      callsign: record.callsign,
+    });
     alert('提交成功');
   } catch (error) {
     alert(`提交失败: ${error}`);

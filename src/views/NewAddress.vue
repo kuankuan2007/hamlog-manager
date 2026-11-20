@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { type CreateAddressRequest, newAddress } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({
@@ -38,7 +39,8 @@ const submitForm = () => {
     recipientName: args.recipientName || undefined,
   };
   newAddress(options)
-    .then(() => {
+    .then((record) => {
+      broadcastEventCenter.emit('update', { type: 'address', callsign: record.callsign });
       alert('提交成功');
     })
     .catch((err) => {

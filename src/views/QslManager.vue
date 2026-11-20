@@ -85,6 +85,7 @@ import {
 import QslReceiveTable from '@/components/dataDisplay/QslReceiveTable.vue';
 import QslActionBar from '@/components/dataDisplay/QslActionBar.vue';
 import QslSendTable from '@/components/dataDisplay/QslSendTable.vue';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import type { CommunicationLog } from '@schema/communicationLog';
 import type { QSLReceive, QSLSend } from '@schema/qsl';
 
@@ -195,6 +196,12 @@ async function loadRecords() {
 }
 
 loadRecords();
+
+onUnmounted(
+  broadcastEventCenter.onUpdate(() => {
+    void loadRecords();
+  })
+);
 </script>
 
 <style scoped lang="scss">

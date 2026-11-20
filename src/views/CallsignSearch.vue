@@ -39,6 +39,7 @@
 import { searchCallsign } from '@/api/select';
 import CommunicationLogBasicTable from '@/components/dataDisplay/CommunicationLogBasicTable.vue';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { highlight } from '@/scripts/searchHighlight';
 import type { CommunicationLogSearchResult } from '@schema/communicationLog';
 import { getURLArgs } from '@/scripts/urlArgs';
@@ -80,6 +81,13 @@ onMounted(() => {
 onUpdated(() => {
   highlightCallsign(args.query);
 });
+onUnmounted(
+  broadcastEventCenter.onUpdate((data) => {
+    if (data.type === 'log' && args.query) {
+      updateSearchResult(args.query);
+    }
+  })
+);
 </script>
 <style scoped lang="scss">
 .search-box {

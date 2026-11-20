@@ -27,6 +27,7 @@
 import type { CommunicationLog } from '@schema/communicationLog';
 import CommunicationLogTable from '@/components/dataDisplay/CommunicationLogTable.vue';
 import { selectCommunicationLogs } from '@/api/select';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({
@@ -39,13 +40,24 @@ function toggleCallsignVisibility(): void {
   args.showCallsign = showCallsign.value ? 'false' : 'true';
 }
 
-selectCommunicationLogs()
-  .then((logs) => {
+async function loadCommunicationLogs(): Promise<void> {
+  try {
+    const logs = await selectCommunicationLogs();
     communicationLogList.value = logs.items;
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error('Error fetching communication logs:', error);
-  });
+  }
+}
+
+loadCommunicationLogs();
+
+onUnmounted(
+  broadcastEventCenter.onUpdate((data) => {
+    if (data.type === 'log') {
+      void loadCommunicationLogs();
+    }
+  })
+);
 </script>
 <style scoped lang="scss">
 .box {

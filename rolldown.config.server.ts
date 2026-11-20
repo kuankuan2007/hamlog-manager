@@ -12,7 +12,7 @@ export default defineConfig([
       banner: (info) => {
         const fileName = info.fileName;
 
-        if (/index\.js$/.test(fileName)) {
+        if (fileName.endsWith('index.js')) {
           return `/*!
  * @name hamlog-manager
  * @package @kuankuan/hamlog-manager

@@ -36,6 +36,7 @@
 import { selectAddressByCallsign } from '@/api/select';
 import { type CreateAddressRequest, newAddress } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({
@@ -90,8 +91,9 @@ async function submitForm(): Promise<void> {
 
   submitting.value = true;
   try {
-    await newAddress(options);
+    const record = await newAddress(options);
     mode.value = 'edit';
+    broadcastEventCenter.emit('update', { type: 'address', callsign: record.callsign });
     alert('提交成功');
   } catch (reason) {
     const message = reason instanceof Error ? reason.message : String(reason);

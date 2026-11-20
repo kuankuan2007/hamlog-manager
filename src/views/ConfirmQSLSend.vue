@@ -32,6 +32,7 @@
 import { selectQSLSendById } from '@/api/select';
 import { confirmQSLSend, type ConfirmQSLSendInput } from '@/api/update';
 import type { QSLSend } from '@schema/qsl';
+import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getCurrentTimeTagString } from '@util/time';
 import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
 
@@ -56,7 +57,12 @@ async function submitForm() {
 
   submitting.value = true;
   try {
-    await confirmQSLSend(options);
+    const updated = await confirmQSLSend(options);
+    broadcastEventCenter.emit('update', {
+      type: 'qsl-send',
+      id: updated.id,
+      callsign: updated.callsign,
+    });
     alert('确认成功');
   } catch (error) {
     alert(`确认失败: ${error}`);

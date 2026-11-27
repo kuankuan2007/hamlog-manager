@@ -27,7 +27,7 @@
         <tr
           v-for="record in records"
           :key="record.id"
-          :id="rowIdPrefix ? `${rowIdPrefix}${record.id}` : undefined"
+          v-url-hash-active="rowIdPrefix ? `${rowIdPrefix}${record.id}` : undefined"
         >
           <td>{{ record.id }}</td>
           <td>{{ record.sequenceNumber }}</td>
@@ -57,6 +57,7 @@ import type { CommunicationLog } from '@schema/communicationLog';
 import DataActionBar, { type DataAction } from '@/components/dataDisplay/DataActionBar.vue';
 import { buildEmailPrepareHref } from '@/scripts/sendEmail';
 import getShowText from '@/scripts/showText';
+import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 const props = withDefaults(
   defineProps<{
@@ -112,7 +113,15 @@ function getActions(record: CommunicationLog): DataAction[] {
 </script>
 
 <style scoped lang="scss">
+@use '@/styles/theme.scss' as *;
+
 .table-wrapper {
   overflow-x: auto;
+}
+
+tr.url-hash-active > td {
+  @include theme.use {
+    background: color.mix(theme.get('strong-color'), theme.get('background'), 20%);
+  }
 }
 </style>

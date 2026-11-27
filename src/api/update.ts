@@ -39,7 +39,9 @@ export function newAddress(options: CreateAddressRequest): Promise<Address> {
   return sendData<CreateAddressRequest, Address>('/api/update/new-address', options);
 }
 
-export function newCommunicationLog(options: CreateCommunicationLogInput): Promise<CommunicationLog> {
+export function newCommunicationLog(
+  options: CreateCommunicationLogInput
+): Promise<CommunicationLog> {
   if (!validateCreateCommunicationLogInput(options)) {
     throw new Error(
       formatCreateCommunicationLogInputErrors(validateCreateCommunicationLogInput.errors)

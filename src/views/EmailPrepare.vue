@@ -246,9 +246,7 @@ onUnmounted(
     } else {
       relevant =
         (data.type === 'log' && data.id === args.communicationLogId) ||
-        ((data.type === 'qsl-send' ||
-          data.type === 'qsl-receive' ||
-          data.type === 'address') &&
+        ((data.type === 'qsl-send' || data.type === 'qsl-receive' || data.type === 'address') &&
           data.callsign.toUpperCase() === source.record.callsign.toUpperCase());
     }
 

@@ -1,7 +1,9 @@
 <template>
   <div class="box">
     <h1>发送邮件</h1>
-    <form @submit.prevent="submitSend">
+    <p v-if="draftError" role="alert">{{ draftError }}</p>
+    <p v-if="!draftReady && !draftError">正在加载邮件草稿...</p>
+    <form v-if="draftReady" @submit.prevent="submitSend">
       <p>
         收件人：
         <InputEmailList
@@ -62,19 +64,150 @@ import { previewEmail, sendEmailRequest } from '@/api/email';
 import InputEmailList from '@/components/input/InputEmailList.vue';
 import type { SendEmailInput } from '@schema/email';
 import { defaultValue } from '@/config';
-import { getURLArgs } from '@/scripts/urlArgs';
+import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router';
+import {
+  createEmailContentId,
+  normalizeEmailRecipients,
+  readEmailDraft,
+  requestEmailDraft,
+  saveEmailDraft,
+  type EmailDraft,
+  type SendEmailLinkOptions,
+} from '@/scripts/sendEmail';
 
-const args = getURLArgs({
-  title: { type: 'string' },
-  content: { type: 'string' },
-  to: { type: 'array' },
-  toInput: { type: 'string' },
-  cc: { type: 'array', default: defaultValue.sendEmail.cc },
-  ccInput: { type: 'string' },
-  bcc: { type: 'array', default: defaultValue.sendEmail.bcc },
-  bccInput: { type: 'string' },
-  contentType: { type: 'choice', values: ['text', 'html'], default: 'text' },
+const route = useRoute();
+const router = useRouter();
+const draftReady = ref(false);
+const draftError = ref('');
+const args = reactive<EmailDraft>({
+  title: '',
+  content: '',
+  to: [],
+  toInput: '',
+  cc: [],
+  ccInput: '',
+  bcc: [],
+  bccInput: '',
+  contentType: 'text',
 });
+let contentId = '';
+let loadVersion = 0;
+onScopeDispose(() => {
+  loadVersion++;
+});
+
+function addDefaultCc(values: string[]): string[] {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const value of ['<CC_SELF>', ...defaultValue.sendEmail.cc, ...values]) {
+    const key = value.trim().toUpperCase();
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      result.push(value.trim());
+    }
+  }
+  return result;
+}
+
+function draftFromLink(options: SendEmailLinkOptions): EmailDraft {
+  return {
+    title: options.title,
+    content: options.content,
+    to: normalizeEmailRecipients(options.to),
+    toInput: '',
+    cc: normalizeEmailRecipients(options.cc),
+    ccInput: '',
+    bcc:
+      options.bcc === undefined
+        ? [...defaultValue.sendEmail.bcc]
+        : normalizeEmailRecipients(options.bcc),
+    bccInput: '',
+    contentType: 'text',
+  };
+}
+
+const legacyKeys = [
+  'title',
+  'content',
+  'to',
+  'toInput',
+  'cc',
+  'ccInput',
+  'bcc',
+  'bccInput',
+  'contentType',
+];
+
+async function loadDraft(): Promise<void> {
+  if (route.path !== '/send-email') return;
+  const params = new URL(route.fullPath, window.location.origin).searchParams;
+  const requestedId = params.get('email-content-id') || createEmailContentId();
+  if (requestedId === contentId) return;
+  const version = ++loadVersion;
+  contentId = requestedId;
+  draftReady.value = false;
+  draftError.value = '';
+  const hasLegacy = legacyKeys.some((key) => params.has(key));
+  const legacy: EmailDraft | undefined = hasLegacy
+    ? {
+        title: params.get('title') ?? '',
+        content: params.get('content') ?? '',
+        to: normalizeEmailRecipients(params.getAll('to')),
+        toInput: params.get('toInput') ?? '',
+        cc: normalizeEmailRecipients(params.getAll('cc')),
+        ccInput: params.get('ccInput') ?? '',
+        bcc: params.has('bcc')
+          ? normalizeEmailRecipients(params.getAll('bcc'))
+          : [...defaultValue.sendEmail.bcc],
+        bccInput: params.get('bccInput') ?? '',
+        contentType: params.get('contentType') === 'html' ? 'html' : 'text',
+      }
+    : undefined;
+
+  const query: LocationQueryRaw = { ...route.query, 'email-content-id': requestedId };
+  for (const key of legacyKeys) delete query[key];
+  const hash = route.hash;
+  queueMicrotask(() => {
+    if (version === loadVersion && route.path === '/send-email')
+      void router.replace({ query, hash });
+  });
+
+  try {
+    let draft = readEmailDraft(requestedId) ?? legacy;
+    if (!draft && params.has('email-content-id')) {
+      const shared = await requestEmailDraft(requestedId);
+      if (version !== loadVersion || route.path !== '/send-email') return;
+      if (!shared) throw new Error('未找到邮件草稿，请从原页面重新打开。');
+      draft = draftFromLink(shared);
+    }
+    draft ??= draftFromLink({ title: '', content: '' });
+    Object.assign(args, draft, { cc: addDefaultCc(draft.cc) });
+    saveEmailDraft(requestedId, args);
+    draftReady.value = true;
+  } catch (reason) {
+    if (version === loadVersion)
+      draftError.value = reason instanceof Error ? reason.message : String(reason);
+  }
+}
+
+watch(
+  () => route.fullPath,
+  () => void loadDraft(),
+  { immediate: true, flush: 'sync' }
+);
+watch(
+  args,
+  () => {
+    if (!draftReady.value) return;
+    try {
+      saveEmailDraft(contentId, args);
+      draftError.value = '';
+    } catch (reason) {
+      draftError.value = `无法保存邮件草稿：${reason instanceof Error ? reason.message : String(reason)}`;
+    }
+  },
+  { deep: true }
+);
 const toResolved = ref<string[]>([]);
 const ccResolved = ref<string[]>([]);
 const bccResolved = ref<string[]>([]);

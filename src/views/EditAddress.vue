@@ -50,6 +50,12 @@ const loading = ref(false);
 const submitting = ref(false);
 const loadError = ref<string | null>(null);
 const mode = ref<'edit' | 'create'>('edit');
+let loadVersion = 0;
+let loadController: AbortController | undefined;
+onScopeDispose(() => {
+  loadVersion++;
+  loadController?.abort();
+});
 
 const pageTitle = computed(() => {
   if (mode.value === 'edit') return '编辑地址';
@@ -57,12 +63,20 @@ const pageTitle = computed(() => {
 });
 
 async function loadAddress(): Promise<void> {
-  if (!callsign.value) return;
+  loadController?.abort();
+  loadController = new AbortController();
+  const version = ++loadVersion;
+  const requestedCallsign = callsign.value;
+  if (!requestedCallsign) {
+    loading.value = false;
+    return;
+  }
 
   loading.value = true;
   loadError.value = null;
   try {
-    const result = await selectAddressByCallsign(callsign.value);
+    const result = await selectAddressByCallsign(requestedCallsign, loadController.signal);
+    if (version !== loadVersion || callsign.value !== requestedCallsign) return;
     if (result === null) {
       mode.value = 'create';
       return;
@@ -73,9 +87,10 @@ async function loadAddress(): Promise<void> {
     if (!args.address) args.address = result.address;
     if (!args.recipientName) args.recipientName = result.recipientName ?? '';
   } catch (reason) {
+    if (version !== loadVersion || callsign.value !== requestedCallsign) return;
     loadError.value = reason instanceof Error ? reason.message : String(reason);
   } finally {
-    loading.value = false;
+    if (version === loadVersion && callsign.value === requestedCallsign) loading.value = false;
   }
 }
 

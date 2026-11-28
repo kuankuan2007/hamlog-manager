@@ -60,8 +60,13 @@ export async function selectCommunicationLogsByCallsign(
   );
 }
 
-export async function selectCommunicationLogById(id: number): Promise<CommunicationLog | null> {
-  return await getData<CommunicationLog | null>(fetch(`/api/select/communication-log/id/${id}`));
+export async function selectCommunicationLogById(
+  id: number,
+  signal?: AbortSignal
+): Promise<CommunicationLog | null> {
+  return await getData<CommunicationLog | null>(
+    fetch(`/api/select/communication-log/id/${id}`, { signal })
+  );
 }
 
 export async function selectUnsentQSLCommunicationLogs(): Promise<CommunicationLog[]> {
@@ -84,23 +89,34 @@ export async function selectUnsentQSLCommunicationLogs(): Promise<CommunicationL
   return items;
 }
 
-export async function selectAddressesByCallsigns(callsigns: string[]): Promise<Address[]> {
+export async function selectAddressesByCallsigns(
+  callsigns: string[],
+  signal?: AbortSignal
+): Promise<Address[]> {
   if (callsigns.length === 0) return [];
 
   const params = new URLSearchParams({ callsign: callsigns.join(',') });
-  return await getData<Address[]>(fetch(`/api/select/address-query?${params.toString()}`));
-}
-
-export async function selectAddressByCallsign(callsign: string): Promise<Address | null> {
-  return await getData<Address | null>(
-    fetch(`/api/select/address/${encodeURIComponent(callsign)}`)
+  return await getData<Address[]>(
+    fetch(`/api/select/address-query?${params.toString()}`, { signal })
   );
 }
 
-export async function selectCallsignByEmail(email: string): Promise<Email2CallsignResponse> {
+export async function selectAddressByCallsign(
+  callsign: string,
+  signal?: AbortSignal
+): Promise<Address | null> {
+  return await getData<Address | null>(
+    fetch(`/api/select/address/${encodeURIComponent(callsign)}`, { signal })
+  );
+}
+
+export async function selectCallsignByEmail(
+  email: string,
+  signal?: AbortSignal
+): Promise<Email2CallsignResponse> {
   const params = new URLSearchParams({ email });
   return await getData<Email2CallsignResponse>(
-    fetch(`/api/select/email2callsign?${params.toString()}`)
+    fetch(`/api/select/email2callsign?${params.toString()}`, { signal })
   );
 }
 
@@ -133,21 +149,29 @@ export async function selectQSLSends(): Promise<QSLSend[]> {
   return await getData<QSLSend[]>(fetch('/api/select/qsl-send'));
 }
 
-export async function selectQSLSendById(id: number): Promise<QSLSend | null> {
-  return await getData<QSLSend | null>(fetch(`/api/select/qsl-send/id/${id}`));
+export async function selectQSLSendById(id: number, signal?: AbortSignal): Promise<QSLSend | null> {
+  return await getData<QSLSend | null>(fetch(`/api/select/qsl-send/id/${id}`, { signal }));
 }
 
 export async function selectQSLReceives(): Promise<QSLReceive[]> {
   return await getData<QSLReceive[]>(fetch('/api/select/qsl-receive'));
 }
 
-export async function selectQSLReceiveById(id: number): Promise<QSLReceive | null> {
-  return await getData<QSLReceive | null>(fetch(`/api/select/qsl-receive/id/${id}`));
+export async function selectQSLReceiveById(
+  id: number,
+  signal?: AbortSignal
+): Promise<QSLReceive | null> {
+  return await getData<QSLReceive | null>(fetch(`/api/select/qsl-receive/id/${id}`, { signal }));
 }
 
-export async function selectCallsignDetail(callsign: string): Promise<CallsignDetail> {
+export async function selectCallsignDetail(
+  callsign: string,
+  signal?: AbortSignal
+): Promise<CallsignDetail> {
   const params = new URLSearchParams({ callsign });
-  return await getData<CallsignDetail>(fetch(`/api/select/callsign-detail?${params.toString()}`));
+  return await getData<CallsignDetail>(
+    fetch(`/api/select/callsign-detail?${params.toString()}`, { signal })
+  );
 }
 export async function searchCallsign(
   query: string,

@@ -60,7 +60,11 @@ import {
 } from '@/scripts/mailContent';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { selfInfoData } from '@/scripts/selfInfo';
-import { buildSendEmailHref } from '@/scripts/sendEmail';
+import {
+  buildSendEmailHref,
+  createEmailContentId,
+  releaseEmailDraftLink,
+} from '@/scripts/sendEmail';
 import { getURLArgs } from '@/scripts/urlArgs';
 
 type PreparedSource =
@@ -84,6 +88,14 @@ const args = getURLArgs({
 const loading = ref(false);
 const error = ref<string | null>(null);
 const prepared = ref<PreparedEmail | null>(null);
+let loadVersion = 0;
+let loadController: AbortController | undefined;
+onScopeDispose(() => {
+  loadVersion++;
+  loadController?.abort();
+});
+const contentId = createEmailContentId();
+onScopeDispose(() => releaseEmailDraftLink(contentId));
 
 function formatAddress(address?: Address): string | undefined {
   if (!address) return undefined;
@@ -109,12 +121,15 @@ function getLatestQslReceive(detail: CallsignDetail, callsign: string): QSLRecei
     .sort((left, right) => right.receivedAt.localeCompare(left.receivedAt))[0];
 }
 
-async function requireCallsignDetail(callsign: string): Promise<CallsignDetail> {
-  return await selectCallsignDetail(callsign);
+async function requireCallsignDetail(
+  callsign: string,
+  signal: AbortSignal
+): Promise<CallsignDetail> {
+  return await selectCallsignDetail(callsign, signal);
 }
 
-async function prepareQslSendEmail(id: number): Promise<PreparedEmail> {
-  const record = await selectQSLSendById(id);
+async function prepareQslSendEmail(id: number, signal: AbortSignal): Promise<PreparedEmail> {
+  const record = await selectQSLSendById(id, signal);
   if (!record) throw new Error(`未找到 ID=${id} 的 QSL 发件记录`);
 
   return {
@@ -132,11 +147,11 @@ async function prepareQslSendEmail(id: number): Promise<PreparedEmail> {
   };
 }
 
-async function prepareQslReceiveEmail(id: number): Promise<PreparedEmail> {
-  const record = await selectQSLReceiveById(id);
+async function prepareQslReceiveEmail(id: number, signal: AbortSignal): Promise<PreparedEmail> {
+  const record = await selectQSLReceiveById(id, signal);
   if (!record) throw new Error(`未找到 ID=${id} 的 QSL 收件记录`);
 
-  const detail = await requireCallsignDetail(record.callsign);
+  const detail = await requireCallsignDetail(record.callsign, signal);
   const latestQslSentAt = getLatestQslSentAt(detail, record.callsign);
   return {
     title: '您的QSL卡片已收妥',
@@ -154,11 +169,11 @@ async function prepareQslReceiveEmail(id: number): Promise<PreparedEmail> {
   };
 }
 
-async function prepareQsoConfirmEmail(id: number): Promise<PreparedEmail> {
-  const record = await selectCommunicationLogById(id);
+async function prepareQsoConfirmEmail(id: number, signal: AbortSignal): Promise<PreparedEmail> {
+  const record = await selectCommunicationLogById(id, signal);
   if (!record) throw new Error(`未找到 ID=${id} 的通联记录`);
 
-  const detail = await requireCallsignDetail(record.callsign);
+  const detail = await requireCallsignDetail(record.callsign, signal);
   const address = detail.addresses[0];
   return {
     title: `来自${selfInfoData.callsign}的QSO确认`,
@@ -183,14 +198,27 @@ async function prepareQsoConfirmEmail(id: number): Promise<PreparedEmail> {
 
 const sendHref = computed(() => {
   if (!prepared.value) return '/send-email';
-  return buildSendEmailHref({
-    title: prepared.value.title,
-    to: prepared.value.to,
-    content: prepared.value.content,
-  });
+  return buildSendEmailHref(
+    {
+      title: prepared.value.title,
+      to: prepared.value.to,
+      content: prepared.value.content,
+    },
+    contentId
+  );
 });
 
 async function loadPreparedEmail(): Promise<void> {
+  loadController?.abort();
+  const controller = new AbortController();
+  loadController = controller;
+  const version = ++loadVersion;
+  const requestedIds = [args.qslSendId, args.qslReceiveId, args.communicationLogId];
+  const isCurrent = () =>
+    version === loadVersion &&
+    requestedIds.every(
+      (id, index) => id === [args.qslSendId, args.qslReceiveId, args.communicationLogId][index]
+    );
   loading.value = true;
   error.value = null;
   prepared.value = null;
@@ -203,22 +231,17 @@ async function loadPreparedEmail(): Promise<void> {
     ).length;
     if (candidateCount !== 1) throw new Error('必须且只能提供一个邮件准备参数');
 
-    if (qslSendId !== undefined) {
-      prepared.value = await prepareQslSendEmail(qslSendId);
-      return;
-    }
-    if (qslReceiveId !== undefined) {
-      prepared.value = await prepareQslReceiveEmail(qslReceiveId);
-      return;
-    }
-    if (communicationLogId !== undefined) {
-      prepared.value = await prepareQsoConfirmEmail(communicationLogId);
-      return;
-    }
+    const result =
+      qslSendId !== undefined
+        ? await prepareQslSendEmail(qslSendId, controller.signal)
+        : qslReceiveId !== undefined
+          ? await prepareQslReceiveEmail(qslReceiveId, controller.signal)
+          : await prepareQsoConfirmEmail(communicationLogId!, controller.signal);
+    if (isCurrent()) prepared.value = result;
   } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : String(reason);
+    if (isCurrent()) error.value = reason instanceof Error ? reason.message : String(reason);
   } finally {
-    loading.value = false;
+    if (isCurrent()) loading.value = false;
   }
 }
 

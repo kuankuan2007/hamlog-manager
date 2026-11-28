@@ -209,6 +209,12 @@ const recipientNameList = ['贵单位', '您'] as const;
 
 let requestVersion = 0;
 let searchController: AbortController | undefined;
+let recordsController: AbortController | undefined;
+onScopeDispose(() => {
+  requestVersion++;
+  searchController?.abort();
+  recordsController?.abort();
+});
 
 const now = new Date();
 const issueDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
@@ -216,10 +222,12 @@ const issueDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate(
 watch(
   () => args.ids.join(','),
   async (value) => {
+    recordsController?.abort();
+    recordsController = new AbortController();
+    const currentVersion = ++requestVersion;
     const selectedIds = printData.value.map((record) => record.id).join(',');
     if (value === selectedIds) return;
 
-    const currentVersion = ++requestVersion;
     printData.value = [];
     error.value = '';
 
@@ -239,7 +247,9 @@ watch(
 
     const uniqueIds = [...new Set(ids)];
     try {
-      const results = await Promise.all(uniqueIds.map(selectCommunicationLogById));
+      const results = await Promise.all(
+        uniqueIds.map((id) => selectCommunicationLogById(id, recordsController?.signal))
+      );
       if (currentVersion !== requestVersion) return;
 
       const missingIds = uniqueIds.filter((_, index) => results[index] === null);

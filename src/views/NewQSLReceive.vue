@@ -20,7 +20,7 @@ import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({
   callsign: { type: 'string' },
-  receivedAt: new DateTagField(getCurrentTimeTagString().slice(0, 10)),
+  receivedAt: new DateTagField<false>(getCurrentTimeTagString().slice(0, 10)),
 });
 const submitting = ref(false);
 

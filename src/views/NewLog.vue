@@ -29,7 +29,7 @@ import { DateTimeTagField, getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({
   callsign: { type: 'string' },
-  time: new DateTimeTagField(getCurrentTimeTagString()),
+  time: new DateTimeTagField<false>(getCurrentTimeTagString()),
   timezone: {
     type: 'number',
     integer: true,

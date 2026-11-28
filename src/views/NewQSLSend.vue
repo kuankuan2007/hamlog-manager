@@ -21,7 +21,7 @@ import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
 
 const args = getURLArgs({
   callsign: { type: 'string' },
-  sentAt: new DateTagField(getCurrentTimeTagString().slice(0, 10)),
+  sentAt: new DateTagField<false>(getCurrentTimeTagString().slice(0, 10)),
   trackingNumber: { type: 'string' },
 });
 const submitting = ref(false);

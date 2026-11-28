@@ -5,7 +5,11 @@ import {
 } from '@/api/schema';
 import { getData } from '@/api/util';
 
-export async function callsign2email(callsign: string, mode: Callsign2EmailMode) {
+export async function callsign2email(
+  callsign: string,
+  mode: Callsign2EmailMode,
+  signal?: AbortSignal
+) {
   if (!callsign2EmailModes.includes(mode)) {
     return Promise.reject(
       new Error(`Invalid mode: ${mode}. Must be one of: ${callsign2EmailModes.join(', ')}`)
@@ -13,6 +17,6 @@ export async function callsign2email(callsign: string, mode: Callsign2EmailMode)
   }
   const params = new URLSearchParams({ callsign, mode });
   return await getData<Callsign2EmailResponse>(
-    fetch(`/api/auto/callsign2email?${params.toString()}`)
+    fetch(`/api/auto/callsign2email?${params.toString()}`, { signal })
   );
 }

@@ -39,13 +39,19 @@ import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
 const args = getURLArgs({
   id: { type: 'number', integer: true, min: 1 },
   status: { type: 'choice', values: ['received', 'returned', 'not_received'] },
-  confirmedAt: new DateTagField(),
+  confirmedAt: new DateTagField<false>(),
 });
 
 const record = ref<QSLSend | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const submitting = ref(false);
+let loadVersion = 0;
+let loadController: AbortController | undefined;
+onScopeDispose(() => {
+  loadVersion++;
+  loadController?.abort();
+});
 
 async function submitForm() {
   if (record.value === null || !args.status) return;
@@ -72,28 +78,37 @@ async function submitForm() {
 }
 
 async function loadRecord() {
-  if (!Number.isSafeInteger(args.id) || args.id <= 0) {
+  loadController?.abort();
+  loadController = new AbortController();
+  const version = ++loadVersion;
+  const id = args.id;
+  if (!Number.isSafeInteger(id) || id <= 0) {
     error.value = '缺少有效的 QSL 发件记录 ID';
     record.value = null;
+    loading.value = false;
     return;
   }
 
   loading.value = true;
   error.value = null;
+  record.value = null;
   try {
-    record.value = await selectQSLSendById(args.id);
-    if (record.value === null) {
-      error.value = `未找到 ID 为 ${args.id} 的 QSL 发件记录`;
+    const result = await selectQSLSendById(id, loadController.signal);
+    if (version !== loadVersion || args.id !== id) return;
+    record.value = result;
+    if (result === null) {
+      error.value = `未找到 ID 为 ${id} 的 QSL 发件记录`;
       return;
     }
-    if (!args.status) args.status = record.value.status ?? 'received';
+    if (!args.status) args.status = result.status ?? 'received';
     if (!args.confirmedAt) {
-      args.confirmedAt = record.value.confirmedAt ?? getCurrentTimeTagString().slice(0, 10);
+      args.confirmedAt = result.confirmedAt ?? getCurrentTimeTagString().slice(0, 10);
     }
   } catch (reason) {
+    if (version !== loadVersion || args.id !== id) return;
     error.value = `加载失败：${reason instanceof Error ? reason.message : String(reason)}`;
   } finally {
-    loading.value = false;
+    if (version === loadVersion && args.id === id) loading.value = false;
   }
 }
 

@@ -25,9 +25,32 @@ import { getURLArgs } from '@/scripts/urlArgs';
 const args = getURLArgs({ callsigns: { type: 'array', readonly: true } });
 const error = ref<string>();
 const printData = ref<Address[]>([]);
+let loadVersion = 0;
+let loadController: AbortController | undefined;
+onScopeDispose(() => {
+  loadVersion++;
+  loadController?.abort();
+});
 
 async function loadPrintData(): Promise<void> {
-  printData.value = await selectAddressesByCallsigns([...args.callsigns]);
+  loadController?.abort();
+  loadController = new AbortController();
+  const version = ++loadVersion;
+  const callsigns = [...args.callsigns];
+  const isCurrent = () =>
+    version === loadVersion &&
+    callsigns.length === args.callsigns.length &&
+    callsigns.every((value, index) => value === args.callsigns[index]);
+  try {
+    const result = await selectAddressesByCallsigns(callsigns, loadController.signal);
+    if (!isCurrent()) return;
+    printData.value = result;
+    error.value = undefined;
+  } catch (reason) {
+    if (!isCurrent()) return;
+    printData.value = [];
+    error.value = reason instanceof Error ? reason.message : String(reason);
+  }
 }
 watch(() => args.callsigns, loadPrintData, { immediate: true, deep: true });
 </script>

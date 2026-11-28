@@ -5,9 +5,9 @@ import {
 } from '@util/time';
 import { Field } from '../type';
 
-export interface TimeFieldConfig {
+export interface TimeFieldConfig<ReadonlyValue extends boolean = boolean> {
   default?: string;
-  readonly?: boolean;
+  readonly?: ReadonlyValue;
 }
 
 const DATE_TAG_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -35,10 +35,13 @@ function normalizeDateTimeTag(value: string): string {
   }
 }
 
-export class DateTagField extends Field<string> {
-  constructor(config: TimeFieldConfig | string = '') {
+export class DateTagField<ReadonlyValue extends boolean = false> extends Field<
+  string,
+  ReadonlyValue
+> {
+  constructor(config: TimeFieldConfig<ReadonlyValue> | string = '') {
     const options = typeof config === 'string' ? { default: config } : config;
-    super(normalizeDateTag(options.default ?? ''), options.readonly);
+    super(normalizeDateTag(options.default ?? ''), (options.readonly ?? false) as ReadonlyValue);
   }
 
   parse(inArgs: string): void {
@@ -52,10 +55,16 @@ export class DateTagField extends Field<string> {
   }
 }
 
-export class DateTimeTagField extends Field<string> {
-  constructor(config: TimeFieldConfig | string = '') {
+export class DateTimeTagField<ReadonlyValue extends boolean = false> extends Field<
+  string,
+  ReadonlyValue
+> {
+  constructor(config: TimeFieldConfig<ReadonlyValue> | string = '') {
     const options = typeof config === 'string' ? { default: config } : config;
-    super(normalizeDateTimeTag(options.default ?? ''), options.readonly);
+    super(
+      normalizeDateTimeTag(options.default ?? ''),
+      (options.readonly ?? false) as ReadonlyValue
+    );
   }
 
   parse(inArgs: string): void {

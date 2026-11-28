@@ -53,15 +53,21 @@ function highlightCallsign(callsign: string) {
 }
 
 let abortController: AbortController | null = null;
+onScopeDispose(() => abortController?.abort());
 
 function updateSearchResult(query: string) {
   abortController?.abort();
-  abortController = new AbortController();
-  searchCallsign(query, abortController).then((res) => {
-    if (args.query === query) {
-      searchResult.value = res;
-    }
-  });
+  const controller = new AbortController();
+  abortController = controller;
+  searchCallsign(query, controller)
+    .then((res) => {
+      if (!controller.signal.aborted && args.query === query) {
+        searchResult.value = res;
+      }
+    })
+    .catch((error: unknown) => {
+      if (!controller.signal.aborted) console.error(error);
+    });
 }
 watch(
   () => args.query,

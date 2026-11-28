@@ -8,6 +8,8 @@
 import {
   buildEmailPrepareHref,
   buildSendEmailHref,
+  createEmailContentId,
+  releaseEmailDraftLink,
   type EmailPrepareLinkOptions,
   type EmailRecipientInput,
 } from '@/scripts/sendEmail';
@@ -31,6 +33,9 @@ const props = withDefaults(
   }
 );
 
+const contentId = createEmailContentId();
+onScopeDispose(() => releaseEmailDraftLink(contentId));
+
 const href = computed(() => {
   const prepareOptions: EmailPrepareLinkOptions = {
     qslSendId: props.qslSendId,
@@ -47,12 +52,15 @@ const href = computed(() => {
   }
 
   if (!props.title || !props.content) return '/send-email';
-  return buildSendEmailHref({
-    title: props.title,
-    to: props.to,
-    cc: props.cc,
-    bcc: props.bcc,
-    content: props.content,
-  });
+  return buildSendEmailHref(
+    {
+      title: props.title,
+      to: props.to,
+      cc: props.cc,
+      bcc: props.bcc,
+      content: props.content,
+    },
+    contentId
+  );
 });
 </script>

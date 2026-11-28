@@ -113,6 +113,12 @@ const pendingModel = defineModel<boolean>('pending', {
 const inputValue = defineModel<string>('inputValue', { default: '' });
 const lookupByCallsign = reactive<Record<string, CallsignLookupState>>({});
 const lookupByEmail = reactive<Record<string, EmailLookupState>>({});
+let disposed = false;
+const lookupController = new AbortController();
+onScopeDispose(() => {
+  disposed = true;
+  lookupController.abort();
+});
 
 function normalizeValue(value: string): string {
   return value.trim();
@@ -298,19 +304,27 @@ async function resolveCallsign(value: string, forceRefresh: boolean): Promise<vo
   state.loading = true;
   syncModels();
   try {
-    const response = await callsign2email(callsign, forceRefresh ? 'fallback' : 'cache');
+    const response = await callsign2email(
+      callsign,
+      forceRefresh ? 'fallback' : 'cache',
+      lookupController.signal
+    );
+    if (disposed) return;
     state.email = response.email;
     state.label = getLookupLabel(response);
     state.loginExpired = response.loginExpired ?? false;
     state.loaded = true;
   } catch {
+    if (disposed) return;
     state.email = null;
     state.label = forceRefresh ? '刷新失败' : '缓存';
     state.loginExpired = false;
     state.loaded = true;
   } finally {
-    state.loading = false;
-    syncModels();
+    if (!disposed) {
+      state.loading = false;
+      syncModels();
+    }
   }
 }
 
@@ -327,18 +341,20 @@ async function resolveEmail(value: string): Promise<void> {
 
   state.loading = true;
   try {
-    const response = await selectCallsignByEmail(email);
+    const response = await selectCallsignByEmail(email, lookupController.signal);
+    if (disposed) return;
     state.callsign = response.callsign;
     const owner = formatUpdatedBy(response.updatedBy);
     const source = response.lastUpdate ?? response.comeFrom ?? '缓存';
     state.label = owner ? `${owner} · ${source}` : source;
     state.loaded = true;
   } catch {
+    if (disposed) return;
     state.callsign = null;
     state.label = '查询失败';
     state.loaded = true;
   } finally {
-    state.loading = false;
+    if (!disposed) state.loading = false;
   }
 }
 
@@ -372,7 +388,7 @@ async function syncCallsignLookups(values: string[]): Promise<void> {
     }),
   ]);
 
-  syncModels();
+  if (!disposed) syncModels();
 }
 
 function addInputValue(): void {

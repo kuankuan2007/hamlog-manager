@@ -26,8 +26,9 @@ export function parseURLArgs<T extends URLArgsConfig>(
 
   for (const key of Object.keys(config) as (keyof T)[]) {
     const field = fields[key];
-    field.reset();
-    for (const value of params.getAll(key as string)) field.parse(value);
+    const urlValues = params.getAll(key as string);
+    field.reset(urlValues.length > 0);
+    for (const value of urlValues) field.parse(value);
     values[key as string] = field.value;
   }
 

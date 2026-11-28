@@ -1,15 +1,16 @@
-export abstract class Field<T> {
+export abstract class Field<T, ReadonlyValue extends boolean = boolean> {
   protected readonly defaultValue: T;
-  readonly isReadonly: boolean;
+  readonly isReadonly: ReadonlyValue;
   value: T;
 
-  constructor(defaultValue: T, isReadonly = false) {
+  constructor(defaultValue: T, isReadonly: ReadonlyValue = false as ReadonlyValue) {
     this.defaultValue = defaultValue;
     this.isReadonly = isReadonly;
     this.value = this.copyDefaultValue();
   }
 
-  reset(): void {
+  reset(_hasURLValues = false): void {
+    void _hasURLValues;
     this.value = this.copyDefaultValue();
   }
 
@@ -78,7 +79,15 @@ export type URLArgs<T extends URLArgsConfig> = {
 };
 
 export type HasReadonlyField<T extends URLArgsConfig> = true extends {
-  [Key in keyof T]: T[Key] extends { readonly: true } ? true : false;
+  [Key in keyof T]: T[Key] extends { readonly isReadonly: infer ReadonlyValue }
+    ? true extends ReadonlyValue
+      ? true
+      : false
+    : T[Key] extends { readonly?: infer ReadonlyValue }
+      ? true extends ReadonlyValue
+        ? true
+        : false
+      : false;
 }[keyof T]
   ? true
   : false;

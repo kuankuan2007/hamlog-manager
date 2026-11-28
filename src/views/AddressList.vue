@@ -3,7 +3,7 @@
     <form action="" @submit.prevent="formSubmit">
       <header class="page-header">
         <h1>地址列表</h1>
-        <a href="/new-address" target="_blank">新增地址</a>
+        <a href="/new-address#callsign" target="_blank">新增地址</a>
         <button type="submit">打印</button>
       </header>
 
@@ -24,9 +24,13 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="address in addresses" :key="address.callsign + address.updatedBy">
+            <tr
+              v-for="(address, index) in addresses"
+              :key="address.callsign + address.updatedBy"
+            >
               <td>
                 <input
+                  v-url-hash-focus="index === 0 ? 'address-select' : `address-select-${encodeURIComponent(address.callsign)}-${encodeURIComponent(address.updatedBy)}`"
                   v-model="args.callsigns"
                   type="checkbox"
                   name="callsigns"
@@ -47,7 +51,7 @@
               <td>{{ formatUpdatedBy(address.updatedBy) }}</td>
               <td>
                 <a
-                  :href="`/edit-address?callsign=${encodeURIComponent(address.callsign)}`"
+                  :href="`/edit-address?callsign=${encodeURIComponent(address.callsign)}#postal-code`"
                   target="_blank"
                 >
                   更新
@@ -68,6 +72,7 @@ import type { Address } from '@schema/address';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 const args = getURLArgs({ callsigns: { type: 'array' } });
 const addresses = ref<Address[]>([]);

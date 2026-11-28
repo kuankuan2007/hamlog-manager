@@ -11,13 +11,13 @@ const props = defineProps<{
 }>();
 
 const newSendHref = computed(() => {
-  if (!props.callsign) return '/new-qsl-send';
-  return `/new-qsl-send?callsign=${encodeURIComponent(props.callsign)}`;
+  if (!props.callsign) return '/new-qsl-send#callsign';
+  return `/new-qsl-send?callsign=${encodeURIComponent(props.callsign)}#sent-at`;
 });
 
 const newReceiveHref = computed(() => {
-  if (!props.callsign) return '/new-qsl-receive';
-  return `/new-qsl-receive?callsign=${encodeURIComponent(props.callsign)}`;
+  if (!props.callsign) return '/new-qsl-receive#callsign';
+  return `/new-qsl-receive?callsign=${encodeURIComponent(props.callsign)}#received-at`;
 });
 </script>
 

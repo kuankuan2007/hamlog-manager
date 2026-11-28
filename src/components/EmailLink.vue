@@ -46,7 +46,7 @@ const href = computed(() => {
     return buildEmailPrepareHref(prepareOptions);
   }
 
-  if (!props.title || !props.content) return '/send-email';
+  if (!props.title || !props.content) return '/send-email#to';
   return buildSendEmailHref({
     title: props.title,
     to: props.to,

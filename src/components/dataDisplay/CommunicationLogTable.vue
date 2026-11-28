@@ -100,7 +100,7 @@ function getActions(record: CommunicationLog): DataAction[] {
     },
     {
       label: '新建',
-      href: `/new-log?callsign=${encodeURIComponent(record.callsign)}`,
+      href: `/new-log?callsign=${encodeURIComponent(record.callsign)}#rx-report`,
       target: '_blank',
     },
     {

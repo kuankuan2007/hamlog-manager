@@ -1,7 +1,11 @@
-<template><input type="number" v-model="inputValue" step="0.001" /> MHZ</template>
+<template>
+  <input v-url-hash-focus="props.id" type="number" v-model="inputValue" step="0.001" /> MHZ
+</template>
 <script setup lang="ts">
 import { defaultValue } from '@/config';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
+const props = defineProps<{ id?: string }>();
 const modelValue = defineModel<number>('modelValue', { default: defaultValue.newLog.frequency });
 const inputValue = computed({
   get: () => modelValue.value,

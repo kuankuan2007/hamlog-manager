@@ -41,7 +41,7 @@ export function buildSendEmailHref(options: SendEmailLinkOptions): string {
   const bcc = normalizeEmailRecipients(options.bcc);
   if (bcc.length) params.set('bcc', bcc.join(','));
 
-  return `/send-email?${params.toString()}`;
+  return `/send-email?${params.toString()}#content`;
 }
 
 export function buildEmailPrepareHref(options: EmailPrepareLinkOptions): string {

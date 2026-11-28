@@ -183,7 +183,7 @@ async function prepareQsoConfirmEmail(id: number): Promise<PreparedEmail> {
 }
 
 const sendHref = computed(() => {
-  if (!prepared.value) return '/send-email';
+  if (!prepared.value) return '/send-email#to';
   return buildSendEmailHref({
     title: prepared.value.title,
     to: prepared.value.to,

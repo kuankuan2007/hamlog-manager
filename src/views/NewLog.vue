@@ -2,15 +2,28 @@
   <div class="box">
     <h1>新建日志</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号：<k-input-callsign v-model="args.callsign" required /></p>
-      <p>RS: 收<k-input-rs v-model="args.rxReport" />/ 发<k-input-rs v-model="args.txReport" /></p>
+      <p>呼号：<k-input-callsign id="callsign" v-model="args.callsign" required /></p>
       <p>
-        <k-input-time v-model="args.time" v-model:timezone="args.timezone" />
+        RS: 收<k-input-rs id="rx-report" v-model="args.rxReport" />/ 发<k-input-rs
+          id="tx-report"
+          v-model="args.txReport"
+        />
       </p>
       <p>
-        FREQ: <k-input-freq v-model="args.frequency" /> MODE: <k-input-mode v-model="args.mode" />
+        <k-input-time
+          id="time"
+          timezone-id="timezone"
+          v-model="args.time"
+          v-model:timezone="args.timezone"
+        />
       </p>
-      <p>摘要：<input type="text" name="summary" v-model="args.summary" /></p>
+      <p>
+        FREQ: <k-input-freq id="frequency" v-model="args.frequency" /> MODE:
+        <k-input-mode id="mode" v-model="args.mode" />
+      </p>
+      <p>
+        摘要：<input v-url-hash-focus="'summary'" type="text" name="summary" v-model="args.summary" />
+      </p>
       <p><button type="submit">提交</button></p>
     </form>
   </div>
@@ -26,6 +39,7 @@ import { type CreateCommunicationLogInput, newCommunicationLog } from '@/api/upd
 import { defaultValue } from '@/config';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { DateTimeTagField, getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 const args = getURLArgs({
   callsign: { type: 'string' },

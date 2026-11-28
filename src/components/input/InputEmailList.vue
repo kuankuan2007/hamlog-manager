@@ -62,7 +62,13 @@
         <button class="remove-button" type="button" @click="removeItem(index)">✖</button>
       </li>
     </ul>
-    <input type="text" v-model="inputValue" :placeholder="placeholder" @keydown="handleKeydown" />
+    <input
+      v-url-hash-focus="props.id"
+      type="text"
+      v-model="inputValue"
+      :placeholder="props.placeholder"
+      @keydown="handleKeydown"
+    />
   </div>
 </template>
 
@@ -72,6 +78,7 @@ import type { Callsign2EmailResponse } from '@/api/schema';
 import { selectCallsignByEmail } from '@/api/select';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 type CallsignLookupState = {
   email: string | null;
@@ -88,8 +95,9 @@ type EmailLookupState = {
   loaded: boolean;
 };
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
+    id?: string;
     placeholder?: string;
   }>(),
   {
@@ -188,11 +196,11 @@ function isUnknownEmail(value: string): boolean {
 }
 
 function manualEmailHref(value: string): string {
-  return `/manual-email?callsign=${encodeURIComponent(normalizeValue(value))}`;
+  return `/manual-email?callsign=${encodeURIComponent(normalizeValue(value))}#email`;
 }
 
 function manualEmailHrefByEmail(value: string): string {
-  return `/manual-email?email=${encodeURIComponent(normalizeValue(value))}`;
+  return `/manual-email?email=${encodeURIComponent(normalizeValue(value))}#callsign`;
 }
 
 function removeItem(index: number): void {

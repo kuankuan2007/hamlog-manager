@@ -5,6 +5,7 @@
       <p>
         收件人：
         <InputEmailList
+          id="to"
           v-model="args.to"
           v-model:input-value="args.toInput"
           v-model:resolved="toResolved"
@@ -15,6 +16,7 @@
       <p>
         抄送：
         <InputEmailList
+          id="cc"
           v-model="args.cc"
           v-model:input-value="args.ccInput"
           v-model:resolved="ccResolved"
@@ -25,6 +27,7 @@
       <p>
         密送：
         <InputEmailList
+          id="bcc"
           v-model="args.bcc"
           v-model:input-value="args.bccInput"
           v-model:resolved="bccResolved"
@@ -32,15 +35,33 @@
           v-model:pending="bccPending"
         />
       </p>
-      <p>标题：<input v-model="args.title" type="text" placeholder="邮件标题" required /></p>
+      <p>
+        标题：
+        <input
+          v-url-hash-focus="'title'"
+          v-model="args.title"
+          type="text"
+          placeholder="邮件标题"
+          required
+        />
+      </p>
       <p>
         格式：
-        <select v-model="args.contentType">
+        <select v-url-hash-focus="'content-type'" v-model="args.contentType">
           <option value="text">纯文本</option>
           <option value="html">HTML</option>
         </select>
       </p>
-      <p>正文：<textarea v-model="args.content" rows="12" placeholder="邮件正文" required /></p>
+      <p>
+        正文：
+        <textarea
+          v-url-hash-focus="'content'"
+          v-model="args.content"
+          rows="12"
+          placeholder="邮件正文"
+          required
+        />
+      </p>
       <p class="hint">
         输入值包含 @ 时按邮箱处理，否则按呼号处理并自动读取缓存邮箱。未命中的呼号会以红色加粗显示。
       </p>
@@ -63,6 +84,7 @@ import InputEmailList from '@/components/input/InputEmailList.vue';
 import type { SendEmailInput } from '@schema/email';
 import { defaultValue } from '@/config';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 const args = getURLArgs({

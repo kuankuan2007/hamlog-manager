@@ -7,19 +7,30 @@
     <form v-if="callsign" @submit.prevent="submitForm">
       <p>
         呼号：
-        <KInputCallsign :model-value="callsign" readonly />
+        <KInputCallsign id="callsign" :model-value="callsign" readonly />
       </p>
       <p>
         邮政编码：
-        <input type="text" name="postalCode" required v-model="args.postalCode" />
+        <input
+          v-url-hash-focus="'postal-code'"
+          type="text"
+          name="postalCode"
+          required
+          v-model="args.postalCode"
+        />
       </p>
       <p>
         地址：
-        <input type="text" name="address" required v-model="args.address" />
+        <input v-url-hash-focus="'address'" type="text" name="address" required v-model="args.address" />
       </p>
       <p>
         收件人姓名：
-        <input type="text" name="recipientName" v-model="args.recipientName" />
+        <input
+          v-url-hash-focus="'recipient-name'"
+          type="text"
+          name="recipientName"
+          v-model="args.recipientName"
+        />
       </p>
       <p>
         <button type="submit" :disabled="submitting || loading">
@@ -38,6 +49,7 @@ import { type CreateAddressRequest, newAddress } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 const args = getURLArgs({
   callsign: { type: 'string' },

@@ -15,7 +15,7 @@
       <span class="email-tag">{{ emailSourceLabel }}</span>
       <span class="email-tag login-expired" v-if="emailInfo?.loginExpired">登录失效</span>
       <button class="email-refresh-button" @click="refreshEmailInfo" type="button">刷新</button>
-      <a class="update-email-button" :href="`/manual-email?callsign=${callsign}`" target="_blank"
+      <a class="update-email-button" :href="`/manual-email?callsign=${callsign}#email`" target="_blank"
         >手动更新邮箱</a
       >
       <span class="email-tag" v-if="emailLoading">加载中</span>
@@ -35,7 +35,7 @@
         <p v-else>
           暂无地址信息，<a
             class="new-address-button"
-            :href="`/new-address?callsign=${callsign}`"
+            :href="`/new-address?callsign=${callsign}#postalCode`"
             target="_blank"
             >新增地址</a
           >

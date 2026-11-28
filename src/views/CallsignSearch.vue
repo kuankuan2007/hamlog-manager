@@ -2,9 +2,15 @@
   <div class="box">
     <h1>呼号搜索</h1>
     <p class="search-box">
-      <KInputCallsign v-model="args.query" placeholder="输入呼号进行搜索" :enable-search="false" />
+      <KInputCallsign
+        id="query"
+        autofocus
+        v-model="args.query"
+        placeholder="输入呼号进行搜索"
+        :enable-search="false"
+      />
       <a
-        :href="`/new-log?callsign=${encodeURIComponent(args.query)}`"
+        :href="args.query ? `/new-log?callsign=${encodeURIComponent(args.query)}#rx-report` : '/new-log#callsign'"
         class="new-log-button"
         target="_blank"
         >新增通联记录</a
@@ -23,7 +29,7 @@
           <p>
             <a :href="`/callsign/${item.callsign}`" class="detail-button" target="_blank">详情</a>
             <a
-              :href="`/new-log?callsign=${encodeURIComponent(item.callsign)}`"
+              :href="`/new-log?callsign=${encodeURIComponent(item.callsign)}#rx-report`"
               class="new-log-button"
               target="_blank"
               >新增通联记录</a

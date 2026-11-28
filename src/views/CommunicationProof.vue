@@ -6,6 +6,7 @@
           <label>
             对方单位名称
             <input
+              v-url-hash-focus="'recipient-organization'"
               class="recipient-input"
               v-model.trim="args.recipientOrganization"
               type="text"
@@ -17,7 +18,7 @@
         <div>
           <label>
             称呼
-            <select v-model="args.recipientName">
+            <select v-url-hash-focus="'recipient-name'" v-model="args.recipientName">
               <option v-for="name in recipientNameList" :key="name" :value="name">
                 {{ name }}
               </option>
@@ -38,7 +39,12 @@
           <div class="search-row">
             <label>
               按呼号搜索
-              <input v-model.trim="args.search" type="search" placeholder="输入完整或部分呼号" />
+              <input
+                v-url-hash-focus="'callsign-search'"
+                v-model.trim="args.search"
+                type="search"
+                placeholder="输入完整或部分呼号"
+              />
             </label>
           </div>
           <div v-if="hasSearched" ref="searchPopover" class="search-popover">
@@ -61,6 +67,7 @@
                   >
                     <label>
                       <input
+                        v-url-hash-focus="`record-selection-${record.id}`"
                         type="checkbox"
                         :checked="isSelected(record.id)"
                         @change="toggleRecord(record)"
@@ -83,6 +90,7 @@
                     <li v-for="record in logsByCallsign[result.callsign].slice(3)" :key="record.id">
                       <label>
                         <input
+                          v-url-hash-focus="`record-selection-${record.id}`"
                           type="checkbox"
                           :checked="isSelected(record.id)"
                           @change="toggleRecord(record)"
@@ -189,6 +197,7 @@ import { highlight } from '@/scripts/searchHighlight';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { selfInfoData } from '@/scripts/selfInfo';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 const args = getURLArgs({

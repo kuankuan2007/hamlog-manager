@@ -2,6 +2,7 @@
   <KInputSearch
     type="text"
     name="callsign"
+    :id="props.id"
     v-model="inputValue"
     v-bind="$attrs"
     :searchResult="searchResult"
@@ -20,6 +21,7 @@
 import KInputSearch from './KInputSearch.vue';
 import { tryToGetRelativeTimeString } from '@util/time.ts';
 import { searchCallsign } from '@/api/select.ts';
+const props = defineProps<{ id?: string }>();
 const modelValue = defineModel<string>('modelValue', { default: '' });
 const inputValue = computed({
   get: () => modelValue.value,

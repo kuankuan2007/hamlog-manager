@@ -1,7 +1,10 @@
 <template>
-  <input v-model.number.lazy="inputValue" type="number" />
+  <input v-url-hash-focus="props.id" v-model.number.lazy="inputValue" type="number" />
 </template>
 <script setup lang="ts">
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+
+const props = defineProps<{ id?: string }>();
 const modelValue = defineModel<number>('modelValue', { default: 59 });
 const inputValue = computed({
   get: () => modelValue.value,

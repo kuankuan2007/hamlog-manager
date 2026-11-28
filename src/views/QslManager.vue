@@ -58,11 +58,11 @@
                 <td>{{ formatUnsentType(record.reason) }}</td>
                 <td>
                   <a
-                    :href="`/new-qsl-send?callsign=${encodeURIComponent(record.callsign)}`"
+                    :href="`/new-qsl-send?callsign=${encodeURIComponent(record.callsign)}#sent-at`"
                     target="_blank"
                     >新增发件</a
                   >|<a
-                    :href="`/edit-address?callsign=${encodeURIComponent(record.callsign)}`"
+                    :href="`/edit-address?callsign=${encodeURIComponent(record.callsign)}#postal-code`"
                     target="_blank"
                     >编辑地址</a
                   >

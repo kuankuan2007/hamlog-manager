@@ -2,9 +2,26 @@
   <div class="box">
     <h1>新增 QSL 发件记录</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号：<KInputCallsign v-model="args.callsign" required /></p>
-      <p>发送日期：<input v-model="args.sentAt" type="date" name="sentAt" required /></p>
-      <p>快递单号：<input v-model="args.trackingNumber" type="text" name="trackingNumber" /></p>
+      <p>呼号：<KInputCallsign id="callsign" v-model="args.callsign" required /></p>
+      <p>
+        发送日期：
+        <input
+          v-url-hash-focus="'sent-at'"
+          v-model="args.sentAt"
+          type="date"
+          name="sentAt"
+          required
+        />
+      </p>
+      <p>
+        快递单号：
+        <input
+          v-url-hash-focus="'tracking-number'"
+          v-model="args.trackingNumber"
+          type="text"
+          name="trackingNumber"
+        />
+      </p>
       <p>
         <button type="submit" :disabled="submitting">{{ submitting ? '提交中' : '提交' }}</button>
       </p>
@@ -18,6 +35,7 @@ import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getCurrentTimeTagString } from '@util/time';
 import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 const args = getURLArgs({
   callsign: { type: 'string' },

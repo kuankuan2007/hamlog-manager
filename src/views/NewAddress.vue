@@ -2,17 +2,32 @@
   <div class="box">
     <h1>新建地址</h1>
     <form @submit.prevent="submitForm">
-      <p>呼号： <KInputCallsign id="callsign" required v-model="args.callsign" /></p>
       <p>
-        邮政编码：
-        <input type="text" id="postalCode" name="postalCode" required v-model="args.postalCode" />
+        呼号：
+        <KInputCallsign id="callsign" required v-model="args.callsign" />
       </p>
       <p>
-        地址： <input type="text" id="address" name="address" required v-model="args.address" />
+        邮政编码：
+        <input
+          v-url-hash-focus="'postalCode'"
+          type="text"
+          name="postalCode"
+          required
+          v-model="args.postalCode"
+        />
+      </p>
+      <p>
+        地址：
+        <input v-url-hash-focus="'address'" type="text" name="address" required v-model="args.address" />
       </p>
       <p>
         收件人姓名：
-        <input type="text" id="recipientName" name="recipientName" v-model="args.recipientName" />
+        <input
+          v-url-hash-focus="'recipientName'"
+          type="text"
+          name="recipientName"
+          v-model="args.recipientName"
+        />
       </p>
       <p><button type="submit">提交</button></p>
     </form>
@@ -23,6 +38,7 @@ import { type CreateAddressRequest, newAddress } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 const args = getURLArgs({
   callsign: { type: 'string' },

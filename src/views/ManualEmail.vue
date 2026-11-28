@@ -4,11 +4,11 @@
     <form @submit.prevent="submitForm">
       <p>
         呼号：
-        <KInputCallsign v-model="args.callsign" required />
+        <KInputCallsign id="callsign" v-model="args.callsign" required />
       </p>
       <p>
         邮箱：
-        <input v-model="args.email" type="email" required />
+        <input v-url-hash-focus="'email'" v-model="args.email" type="email" required />
       </p>
       <p>来源：<strong>manual</strong></p>
       <p>
@@ -23,6 +23,7 @@ import { manualUpdateEmail } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 const args = getURLArgs({ callsign: { type: 'string' }, email: { type: 'string' } });
 

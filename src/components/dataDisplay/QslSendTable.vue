@@ -69,7 +69,7 @@ function getActions(record: QSLSend): DataAction[] {
     },
     {
       label: record.confirmedAt === null ? '确认' : '更新',
-      href: `/confirm-qsl-send?id=${record.id}`,
+      href: `/confirm-qsl-send?id=${record.id}#status`,
       target: '_blank',
     },
     {

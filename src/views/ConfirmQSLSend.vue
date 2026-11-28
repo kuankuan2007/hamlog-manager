@@ -9,7 +9,7 @@
       <p>发送日期：{{ record.sentAt }}</p>
       <p>
         邮件状态：
-        <select v-model="args.status" name="status" required>
+        <select v-url-hash-focus="'status'" v-model="args.status" name="status" required>
           <option value="received">已收到</option>
           <option value="returned">已退回</option>
           <option value="not_received">未收到</option>
@@ -17,7 +17,13 @@
       </p>
       <p>
         确认日期：
-        <input v-model="args.confirmedAt" type="date" name="confirmedAt" required />
+        <input
+          v-url-hash-focus="'confirmed-at'"
+          v-model="args.confirmedAt"
+          type="date"
+          name="confirmedAt"
+          required
+        />
       </p>
       <p>
         <button type="submit" :disabled="submitting">
@@ -35,6 +41,7 @@ import type { QSLSend } from '@schema/qsl';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getCurrentTimeTagString } from '@util/time';
 import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 const args = getURLArgs({
   id: { type: 'number', integer: true, min: 1 },

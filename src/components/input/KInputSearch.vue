@@ -1,6 +1,12 @@
 <template>
   <div class="input-search" @keydown="handleKeyDown" ref="boxEle">
-    <input class="input-search-input" type="text" v-model="modelValue" v-bind="$attrs" />
+    <input
+      v-url-hash-focus="props.id"
+      class="input-search-input"
+      type="text"
+      v-model="modelValue"
+      v-bind="$attrs"
+    />
     <div
       class="input-search-result-box"
       v-if="props.enableSearch && props.searchResult && props.searchResult.length > 0"
@@ -19,10 +25,11 @@
 </template>
 <script setup lang="ts" generic="T extends { value: string }">
 import { highlight } from '@/scripts/searchHighlight.ts';
+import { vUrlHashFocus } from '@/scripts/urlHashFocus';
 
 const modelValue = defineModel<string>();
 const props = withDefaults(
-  defineProps<{ searchResult?: T[]; enableSearch?: boolean; enableHighlight?: boolean }>(),
+  defineProps<{ id?: string; searchResult?: T[]; enableSearch?: boolean; enableHighlight?: boolean }>(),
   {
     enableSearch: true,
     enableHighlight: true,

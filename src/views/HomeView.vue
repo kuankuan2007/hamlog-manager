@@ -4,11 +4,11 @@
       <button @click="toggleCallsignVisibility">
         {{ showCallsign ? '隐藏呼号' : '显示呼号' }}
       </button>
-      <a href="/new-log" target="_blank">新建日志</a>
+      <a href="/new-log#callsign" target="_blank">新建日志</a>
       <a href="/callsign-search" target="_blank">呼号搜索</a>
-      <a href="/address-list" target="_blank">地址列表</a>
+      <a href="/address-list#address-select" target="_blank">地址列表</a>
       <a href="/qsl-manager" target="_blank">QSL 管理</a>
-      <a href="/communication-proof" target="_blank">通联证明</a>
+      <a href="/communication-proof#recipient-organization" target="_blank">通联证明</a>
     </div>
     <CommunicationLogTable
       :records="communicationLogList"

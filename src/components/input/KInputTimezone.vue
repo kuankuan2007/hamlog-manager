@@ -6,7 +6,7 @@
   </select>
 </template>
 <script setup lang="ts">
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const props = defineProps<{ id?: string }>();
 const timezoneResult = defineModel<number>('modelValue', { default: 0 });

@@ -84,8 +84,7 @@ import InputEmailList from '@/components/input/InputEmailList.vue';
 import type { SendEmailInput } from '@schema/email';
 import { defaultValue } from '@/config';
 import { getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
-import { vUrlHashActive } from '@/scripts/urlHashActive';
+import { vUrlHashFocus, vUrlHashActive } from '@/scripts/urlHash';
 
 const args = getURLArgs({
   title: { type: 'string' },

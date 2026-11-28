@@ -90,7 +90,7 @@ import QslSendTable from '@/components/dataDisplay/QslSendTable.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import type { CommunicationLog } from '@schema/communicationLog';
 import type { QSLReceive, QSLSend } from '@schema/qsl';
-import { vUrlHashActive } from '@/scripts/urlHashActive';
+import { vUrlHashActive } from '@/scripts/urlHash';
 
 type FailToSendStatus = 'not_received' | 'returned';
 type UnsentQSLLogReason = 'unsent' | FailToSendStatus;

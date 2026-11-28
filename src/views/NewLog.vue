@@ -22,7 +22,12 @@
         <k-input-mode id="mode" v-model="args.mode" />
       </p>
       <p>
-        摘要：<input v-url-hash-focus="'summary'" type="text" name="summary" v-model="args.summary" />
+        摘要：<input
+          v-url-hash-focus="'summary'"
+          type="text"
+          name="summary"
+          v-model="args.summary"
+        />
       </p>
       <p><button type="submit">提交</button></p>
     </form>
@@ -39,7 +44,7 @@ import { type CreateCommunicationLogInput, newCommunicationLog } from '@/api/upd
 import { defaultValue } from '@/config';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { DateTimeTagField, getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const args = getURLArgs({
   callsign: { type: 'string' },

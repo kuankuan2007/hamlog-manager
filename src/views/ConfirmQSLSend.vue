@@ -41,7 +41,7 @@ import type { QSLSend } from '@schema/qsl';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getCurrentTimeTagString } from '@util/time';
 import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const args = getURLArgs({
   id: { type: 'number', integer: true, min: 1 },

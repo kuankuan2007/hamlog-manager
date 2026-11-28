@@ -32,7 +32,7 @@ import type { QSLReceive } from '@schema/qsl';
 import DataActionBar, { type DataAction } from '@/components/dataDisplay/DataActionBar.vue';
 import { buildEmailPrepareHref } from '@/scripts/sendEmail';
 import getShowText from '@/scripts/showText';
-import { vUrlHashActive } from '@/scripts/urlHashActive';
+import { vUrlHashActive } from '@/scripts/urlHash';
 
 const props = withDefaults(
   defineProps<{

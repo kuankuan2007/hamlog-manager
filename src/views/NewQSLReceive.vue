@@ -26,7 +26,7 @@ import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getCurrentTimeTagString } from '@util/time';
 import { DateTagField, getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const args = getURLArgs({
   callsign: { type: 'string' },

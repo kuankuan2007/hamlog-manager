@@ -197,8 +197,7 @@ import { highlight } from '@/scripts/searchHighlight';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { selfInfoData } from '@/scripts/selfInfo';
 import { getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
-import { vUrlHashActive } from '@/scripts/urlHashActive';
+import { vUrlHashFocus, vUrlHashActive } from '@/scripts/urlHash';
 
 const args = getURLArgs({
   ids: { type: 'array' },

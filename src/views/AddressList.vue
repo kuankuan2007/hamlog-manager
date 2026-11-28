@@ -24,13 +24,14 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="(address, index) in addresses"
-              :key="address.callsign + address.updatedBy"
-            >
+            <tr v-for="(address, index) in addresses" :key="address.callsign + address.updatedBy">
               <td>
                 <input
-                  v-url-hash-focus="index === 0 ? 'address-select' : `address-select-${encodeURIComponent(address.callsign)}-${encodeURIComponent(address.updatedBy)}`"
+                  v-url-hash-focus="
+                    index === 0
+                      ? 'address-select'
+                      : `address-select-${encodeURIComponent(address.callsign)}-${encodeURIComponent(address.updatedBy)}`
+                  "
                   v-model="args.callsigns"
                   type="checkbox"
                   name="callsigns"
@@ -72,7 +73,7 @@ import type { Address } from '@schema/address';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
 import { getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const args = getURLArgs({ callsigns: { type: 'array' } });
 const addresses = ref<Address[]>([]);

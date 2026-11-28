@@ -23,7 +23,7 @@ import { manualUpdateEmail } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const args = getURLArgs({ callsign: { type: 'string' }, email: { type: 'string' } });
 

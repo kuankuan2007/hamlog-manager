@@ -62,7 +62,7 @@ import { broadcastEventCenter } from '@/scripts/broadcast';
 import { selfInfoData } from '@/scripts/selfInfo';
 import { buildSendEmailHref } from '@/scripts/sendEmail';
 import { getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashActive } from '@/scripts/urlHashActive';
+import { vUrlHashActive } from '@/scripts/urlHash';
 
 type PreparedSource =
   | { kind: 'qslSend'; record: QSLSend }

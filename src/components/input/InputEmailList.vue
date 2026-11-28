@@ -78,7 +78,7 @@ import type { Callsign2EmailResponse } from '@/api/schema';
 import { selectCallsignByEmail } from '@/api/select';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 type CallsignLookupState = {
   email: string | null;

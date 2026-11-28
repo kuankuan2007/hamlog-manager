@@ -155,6 +155,16 @@ router.beforeEach((to) => {
   return;
 });
 
+router.afterEach((to, from) => {
+  if (to.hash === from.hash) return;
+
+  window.dispatchEvent(
+    new CustomEvent('url-hash-route-change', {
+      detail: { newHash: to.hash, oldHash: from.hash },
+    })
+  );
+});
+
 export const title = ref(defaultTitle);
 export const fullscreen = ref(false);
 export const hideHeader = ref(false);

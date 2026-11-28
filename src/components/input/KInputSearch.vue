@@ -25,11 +25,16 @@
 </template>
 <script setup lang="ts" generic="T extends { value: string }">
 import { highlight } from '@/scripts/searchHighlight.ts';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const modelValue = defineModel<string>();
 const props = withDefaults(
-  defineProps<{ id?: string; searchResult?: T[]; enableSearch?: boolean; enableHighlight?: boolean }>(),
+  defineProps<{
+    id?: string;
+    searchResult?: T[];
+    enableSearch?: boolean;
+    enableHighlight?: boolean;
+  }>(),
   {
     enableSearch: true,
     enableHighlight: true,

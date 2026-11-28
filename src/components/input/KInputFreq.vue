@@ -3,7 +3,7 @@
 </template>
 <script setup lang="ts">
 import { defaultValue } from '@/config';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const props = defineProps<{ id?: string }>();
 const modelValue = defineModel<number>('modelValue', { default: defaultValue.newLog.frequency });

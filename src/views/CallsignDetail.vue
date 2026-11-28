@@ -15,7 +15,10 @@
       <span class="email-tag">{{ emailSourceLabel }}</span>
       <span class="email-tag login-expired" v-if="emailInfo?.loginExpired">登录失效</span>
       <button class="email-refresh-button" @click="refreshEmailInfo" type="button">刷新</button>
-      <a class="update-email-button" :href="`/manual-email?callsign=${callsign}#email`" target="_blank"
+      <a
+        class="update-email-button"
+        :href="`/manual-email?callsign=${callsign}#email`"
+        target="_blank"
         >手动更新邮箱</a
       >
       <span class="email-tag" v-if="emailLoading">加载中</span>
@@ -91,7 +94,7 @@ import type { Callsign2EmailResponse } from '@/api/schema';
 import { copyText } from '@kuankuan/assist-2026/utils/copyText';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
-import { vUrlHashActive } from '@/scripts/urlHashActive';
+import { vUrlHashActive } from '@/scripts/urlHash';
 
 const detail = ref<CallsignDetail | null>(null);
 const props = defineProps<{

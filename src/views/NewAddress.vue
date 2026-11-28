@@ -18,7 +18,13 @@
       </p>
       <p>
         地址：
-        <input v-url-hash-focus="'address'" type="text" name="address" required v-model="args.address" />
+        <input
+          v-url-hash-focus="'address'"
+          type="text"
+          name="address"
+          required
+          v-model="args.address"
+        />
       </p>
       <p>
         收件人姓名：
@@ -38,7 +44,7 @@ import { type CreateAddressRequest, newAddress } from '@/api/update';
 import KInputCallsign from '@/components/input/KInputCallsign.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const args = getURLArgs({
   callsign: { type: 'string' },

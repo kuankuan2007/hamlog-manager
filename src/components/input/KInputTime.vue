@@ -15,7 +15,7 @@ import {
   getCurrentTimeTagString,
 } from '@util/time';
 import KInputTimezoneRaw from './KInputTimezone.vue';
-import { vUrlHashFocus } from '@/scripts/urlHashFocus';
+import { vUrlHashFocus } from '@/scripts/urlHash';
 
 const props = defineProps<{ id?: string; timezoneId?: string }>();
 const modelValue = defineModel<string>('modelValue', { default: () => getCurrentTimeTagString() });

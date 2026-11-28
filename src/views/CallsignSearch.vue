@@ -10,7 +10,11 @@
         :enable-search="false"
       />
       <a
-        :href="args.query ? `/new-log?callsign=${encodeURIComponent(args.query)}#rx-report` : '/new-log#callsign'"
+        :href="
+          args.query
+            ? `/new-log?callsign=${encodeURIComponent(args.query)}#rx-report`
+            : '/new-log#callsign'
+        "
         class="new-log-button"
         target="_blank"
         >新增通联记录</a
@@ -20,10 +24,7 @@
       <h2 v-url-hash-active="'search-results'">搜索结果</h2>
       <ul class="result-list" v-if="searchResult.length > 0" ref="resultListEle">
         <li v-for="item in searchResult" :key="item.callsign">
-          <h3
-            v-url-hash-active="`search-results-${item.callsign}`"
-            class="callsign-data"
-          >
+          <h3 v-url-hash-active="`search-results-${item.callsign}`" class="callsign-data">
             {{ item.callsign }}
           </h3>
           <p>
@@ -54,7 +55,7 @@ import { broadcastEventCenter } from '@/scripts/broadcast';
 import { highlight } from '@/scripts/searchHighlight';
 import type { CommunicationLogSearchResult } from '@schema/communicationLog';
 import { getURLArgs } from '@/scripts/urlArgs';
-import { vUrlHashActive } from '@/scripts/urlHashActive';
+import { vUrlHashActive } from '@/scripts/urlHash';
 
 const args = getURLArgs({ query: { type: 'string' } });
 const searchResult = ref<CommunicationLogSearchResult[]>([]);

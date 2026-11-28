@@ -33,7 +33,7 @@
 import type { Address } from '@schema/address';
 import getShowText from '@/scripts/showText';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
-import { vUrlHashActive } from '@/scripts/urlHashActive';
+import { vUrlHashActive } from '@/scripts/urlHash';
 
 defineProps<{
   records: Address[];

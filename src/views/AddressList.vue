@@ -34,7 +34,9 @@
                 />
               </td>
               <td>
-                <RouterLink :to="`/callsign/${encodeURIComponent(address.callsign)}`">
+                <RouterLink
+                  :to="`/callsign/${encodeURIComponent(address.callsign)}#address-id-${encodeURIComponent(address.updatedBy)}`"
+                >
                   {{ address.callsign }}
                 </RouterLink>
               </td>

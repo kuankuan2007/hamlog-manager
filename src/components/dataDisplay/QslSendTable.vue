@@ -13,7 +13,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="record in records" :key="record.id">
+        <tr
+          v-for="record in records"
+          :key="record.id"
+          v-url-hash-active="`qsl-send-id-${record.id}`"
+        >
           <td>{{ record.id }}</td>
           <td>{{ record.callsign }}</td>
           <td>{{ record.sentAt }}</td>
@@ -34,6 +38,7 @@ import type { QSLSend, QSLSendStatus } from '@schema/qsl';
 import DataActionBar, { type DataAction } from '@/components/dataDisplay/DataActionBar.vue';
 import { buildEmailPrepareHref } from '@/scripts/sendEmail';
 import getShowText from '@/scripts/showText';
+import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 const props = withDefaults(
   defineProps<{
@@ -60,7 +65,7 @@ function getActions(record: QSLSend): DataAction[] {
   return [
     {
       label: '详情',
-      href: `/callsign/${encodeURIComponent(record.callsign)}#qsl-send`,
+      href: `/callsign/${encodeURIComponent(record.callsign)}#qsl-send-id-${record.id}`,
     },
     {
       label: record.confirmedAt === null ? '确认' : '更新',
@@ -77,7 +82,15 @@ function getActions(record: QSLSend): DataAction[] {
 </script>
 
 <style scoped lang="scss">
+@use '@/styles/theme.scss' as *;
+
 .table-wrapper {
   overflow-x: auto;
+}
+
+tr.url-hash-active > td {
+  @include theme.use {
+    background: color.mix(theme.get('strong-color'), theme.get('background'), 20%);
+  }
 }
 </style>

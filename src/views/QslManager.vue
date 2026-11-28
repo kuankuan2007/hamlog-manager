@@ -45,7 +45,9 @@
             <tbody>
               <tr v-for="record in unsentQSLLogs" :key="record.id">
                 <td>
-                  <RouterLink :to="`/callsign/${encodeURIComponent(record.callsign)}`">
+                  <RouterLink
+                    :to="`/callsign/${encodeURIComponent(record.callsign)}#log-id-${record.id}`"
+                  >
                     {{ record.callsign }}
                   </RouterLink>
                 </td>

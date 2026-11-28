@@ -1,4 +1,5 @@
 import PageNotFoundView from '@/views/PageNotFoundView.vue';
+import { installHashRouteSync } from '@/scripts/urlHash/routeSync';
 import { createRouter, createWebHistory } from 'vue-router';
 
 const router = createRouter({
@@ -155,15 +156,7 @@ router.beforeEach((to) => {
   return;
 });
 
-router.afterEach((to, from) => {
-  if (to.hash === from.hash) return;
-
-  window.dispatchEvent(
-    new CustomEvent('url-hash-route-change', {
-      detail: { newHash: to.hash, oldHash: from.hash },
-    })
-  );
-});
+installHashRouteSync(router);
 
 export const title = ref(defaultTitle);
 export const fullscreen = ref(false);

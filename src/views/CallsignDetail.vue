@@ -21,13 +21,13 @@
       <span class="email-tag" v-if="emailLoading">加载中</span>
     </div>
     <div class="info-box" v-if="detail">
-      <div class="basic" id="basic">
-        <h2>基础信息</h2>
+      <div class="basic">
+        <h2 v-url-hash-active="'basic'">基础信息</h2>
         <CallsignBasicTable v-if="detail?.basic" :record="detail.basic" />
         <p v-else>暂无基本信息</p>
       </div>
-      <div class="address-info" id="address">
-        <h2>地址信息</h2>
+      <div class="address-info">
+        <h2 v-url-hash-active="'address'">地址信息</h2>
         <AddressTable
           v-if="detail.addresses && detail.addresses.length"
           :records="detail.addresses"
@@ -41,27 +41,27 @@
           >
         </p>
       </div>
-      <div class="qsl-info" id="qsl">
-        <h2>QSL收发信息</h2>
+      <div class="qsl-info">
+        <h2 v-url-hash-active="'qsl'">QSL收发信息</h2>
         <QslActionBar :callsign="callsign" />
-        <div class="qsl-send" id="qsl-send">
-          <h3>QSL发送</h3>
+        <div class="qsl-send">
+          <h3 v-url-hash-active="'qsl-send'">QSL发送</h3>
           <QslSendTable
             v-if="detail.qslSends && detail.qslSends.length"
             :records="detail.qslSends"
           />
           <p v-else>暂无QSL发送信息</p>
         </div>
-        <div class="qsl-receive" id="qsl-receive">
-          <h3>QSL接收</h3>
+        <div class="qsl-receive">
+          <h3 v-url-hash-active="'qsl-receive'">QSL接收</h3>
           <QslReceiveTable
             v-if="detail.qslReceives && detail.qslReceives.length"
             :records="detail.qslReceives"
           />
           <p v-else>暂无QSL接收信息</p>
         </div>
-        <div class="communication-log" id="log">
-          <h2>通联信息</h2>
+        <div class="communication-log">
+          <h2 v-url-hash-active="'log'">通联信息</h2>
           <CommunicationLogTable
             v-if="detail.communicationLogs && detail.communicationLogs.length"
             :records="detail.communicationLogs"
@@ -72,7 +72,7 @@
       </div>
     </div>
     <div class="info-box-empty" v-else-if="detailError">
-      <h2>Error:</h2>
+      <h2 v-url-hash-active="'error'">Error:</h2>
       <p>{{ detailError }}</p>
     </div>
     <div class="info-box-empty" v-else>暂无信息</div>
@@ -91,6 +91,7 @@ import type { Callsign2EmailResponse } from '@/api/schema';
 import { copyText } from '@kuankuan/assist-2026/utils/copyText';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { formatUpdatedBy } from '@/scripts/selfInfo';
+import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 const detail = ref<CallsignDetail | null>(null);
 const props = defineProps<{

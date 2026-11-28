@@ -33,7 +33,7 @@
       </div>
 
       <section class="log-picker">
-        <h2>选择通联记录</h2>
+        <h2 v-url-hash-active="'log-picker'">选择通联记录</h2>
         <div class="search-control">
           <div class="search-row">
             <label>
@@ -102,7 +102,7 @@
         </div>
 
         <section v-if="printData.length" class="selected-logs">
-          <h3>已选 {{ printData.length }} 条</h3>
+          <h3 v-url-hash-active="'log-picker-selected'">已选 {{ printData.length }} 条</h3>
           <ul>
             <li v-for="record in printData" :key="record.id">
               <span
@@ -189,6 +189,7 @@ import { highlight } from '@/scripts/searchHighlight';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import { selfInfoData } from '@/scripts/selfInfo';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 const args = getURLArgs({
   ids: { type: 'array' },

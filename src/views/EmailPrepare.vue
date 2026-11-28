@@ -5,25 +5,25 @@
     <p v-else-if="error" class="error">{{ error }}</p>
     <div v-else-if="prepared">
       <section class="source-section" v-if="prepared.source.kind === 'qslSend'">
-        <h2>原始数据</h2>
+        <h2 v-url-hash-active="'source-data'">原始数据</h2>
         <QslSendTable :records="[prepared.source.record]" :show-actions="false" />
       </section>
       <section class="source-section" v-else-if="prepared.source.kind === 'qslReceive'">
-        <h2>原始数据</h2>
+        <h2 v-url-hash-active="'source-data'">原始数据</h2>
         <QslReceiveTable :records="[prepared.source.record]" :show-actions="false" />
         <p class="source-note">
           最近一次 QSL 发件日期：{{ prepared.source.latestQslSentAt ?? '无' }}
         </p>
       </section>
       <section class="source-section" v-else-if="prepared.source.kind === 'communicationLog'">
-        <h2>原始数据</h2>
+        <h2 v-url-hash-active="'source-data'">原始数据</h2>
         <CommunicationLogTable
           :records="[prepared.source.record]"
           :show-actions="false"
           :show-summary="true"
         />
         <div v-if="prepared.source.address" class="address-source">
-          <h3>使用的地址</h3>
+          <h3 v-url-hash-active="'source-data-address'">使用的地址</h3>
           <AddressTable :records="[prepared.source.address]" />
         </div>
         <p v-else class="source-note">当前没有可用于邮件正文的地址记录。</p>
@@ -62,6 +62,7 @@ import { broadcastEventCenter } from '@/scripts/broadcast';
 import { selfInfoData } from '@/scripts/selfInfo';
 import { buildSendEmailHref } from '@/scripts/sendEmail';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 type PreparedSource =
   | { kind: 'qslSend'; record: QSLSend }

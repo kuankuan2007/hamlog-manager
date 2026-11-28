@@ -51,7 +51,7 @@
     </form>
 
     <div v-if="previewHtml">
-      <h2>预览</h2>
+      <h2 v-url-hash-active="'preview'">预览</h2>
       <iframe :srcdoc="previewHtml" title="Email Preview" class="preview-frame" />
     </div>
   </div>
@@ -63,6 +63,7 @@ import InputEmailList from '@/components/input/InputEmailList.vue';
 import type { SendEmailInput } from '@schema/email';
 import { defaultValue } from '@/config';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 const args = getURLArgs({
   title: { type: 'string' },

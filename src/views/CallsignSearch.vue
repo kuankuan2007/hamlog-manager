@@ -11,10 +11,15 @@
       >
     </p>
     <div class="result-box">
-      <h2>搜索结果</h2>
+      <h2 v-url-hash-active="'search-results'">搜索结果</h2>
       <ul class="result-list" v-if="searchResult.length > 0" ref="resultListEle">
         <li v-for="item in searchResult" :key="item.callsign">
-          <h3 class="callsign-data">{{ item.callsign }}</h3>
+          <h3
+            v-url-hash-active="`search-results-${item.callsign}`"
+            class="callsign-data"
+          >
+            {{ item.callsign }}
+          </h3>
           <p>
             <a :href="`/callsign/${item.callsign}`" class="detail-button" target="_blank">详情</a>
             <a
@@ -43,6 +48,7 @@ import { broadcastEventCenter } from '@/scripts/broadcast';
 import { highlight } from '@/scripts/searchHighlight';
 import type { CommunicationLogSearchResult } from '@schema/communicationLog';
 import { getURLArgs } from '@/scripts/urlArgs';
+import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 const args = getURLArgs({ query: { type: 'string' } });
 const searchResult = ref<CommunicationLogSearchResult[]>([]);

@@ -9,18 +9,18 @@
     <p v-if="error" class="error">加载失败：{{ error }}</p>
 
     <section>
-      <h2>QSL 发件记录</h2>
+      <h2 v-url-hash-active="'qsl-send-records'">QSL 发件记录</h2>
       <QslSendTable v-if="qslSends.length" :records="qslSends" />
       <p v-else-if="!loading">暂无 QSL 发件记录</p>
     </section>
 
     <section>
-      <h2>QSL 收件记录</h2>
+      <h2 v-url-hash-active="'qsl-receive-records'">QSL 收件记录</h2>
       <QslReceiveTable v-if="qslReceives.length" :records="qslReceives" />
       <p v-else-if="!loading">暂无 QSL 收件记录</p>
     </section>
     <section>
-      <h2>未发送QSL列表</h2>
+      <h2 v-url-hash-active="'unsent-qsl-list'">未发送QSL列表</h2>
       <div v-if="unsentQSLLogs.length">
         <p>
           <a
@@ -90,6 +90,7 @@ import QslSendTable from '@/components/dataDisplay/QslSendTable.vue';
 import { broadcastEventCenter } from '@/scripts/broadcast';
 import type { CommunicationLog } from '@schema/communicationLog';
 import type { QSLReceive, QSLSend } from '@schema/qsl';
+import { vUrlHashActive } from '@/scripts/urlHashActive';
 
 type FailToSendStatus = 'not_received' | 'returned';
 type UnsentQSLLogReason = 'unsent' | FailToSendStatus;

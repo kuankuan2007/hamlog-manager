@@ -59,6 +59,15 @@ a {
     color: theme.get('active-color');
   }
 }
+h2.url-hash-active,
+h3.url-hash-active,
+h4.url-hash-active,
+h5.url-hash-active,
+h6.url-hash-active {
+  @include theme.use {
+    color: theme.mix('strong-color', 'color', 50%);
+  }
+}
 input,
 select,
 textarea {
